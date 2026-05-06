@@ -1,9 +1,12 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-app = FastAPI()
+app = FastAPI(
+    title="SRV — Sistema de Retroalimentación por Voz",
+    description="API para análisis de fluidez oral con IA (UPAO Taller Integrador 1)",
+    version="0.1.0",
+)
 
-# Configuración para que el Frontend pueda comunicarse con el Backend
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -11,6 +14,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.get("/")
-def inicio():
+def health():
     return {"proyecto": "SRV - Sistema de Retroalimentación por Voz", "estado": "Activo"}
