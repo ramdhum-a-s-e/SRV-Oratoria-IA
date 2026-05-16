@@ -1,0 +1,17 @@
+[Unit]
+Description=SRV-Oratoria-IA Backend (FastAPI + Uvicorn)
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/SRV-Oratoria-IA/backend
+EnvironmentFile=/home/ubuntu/SRV-Oratoria-IA/backend/.env
+ExecStart=/home/ubuntu/SRV-Oratoria-IA/backend/venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000 --workers 2
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

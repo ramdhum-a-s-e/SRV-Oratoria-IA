@@ -1,0 +1,28 @@
+# ── Core API ──────────────────────────────────────────────────────────────────
+fastapi==0.136.1
+uvicorn==0.46.0
+python-multipart==0.0.27
+pydantic==2.13.3
+pydantic_core==2.46.3
+
+# ── Base de datos ──────────────────────────────────────────────────────────────
+sqlalchemy==2.0.41
+psycopg2-binary==2.9.10
+alembic==1.16.1
+
+# ── Auth ───────────────────────────────────────────────────────────────────────
+python-jose[cryptography]==3.5.0
+passlib[argon2]==1.7.4
+
+# ── Dimensión 1: Fluidez Mecánica y Prosodia ──────────────────────────────────
+faster-whisper==1.2.1
+praat-parselmouth==0.4.5
+ctranslate2==4.7.1
+
+# ── Audio utils ────────────────────────────────────────────────────────────────
+av==17.0.1
+numpy==2.4.4
+
+# ── Utilidades ─────────────────────────────────────────────────────────────────
+python-dotenv==1.1.0
+huggingface_hub==1.13.0
