@@ -1,9 +1,17 @@
 import math
-import parselmouth
-from parselmouth.praat import call
+
+try:
+    import parselmouth
+    from parselmouth.praat import call
+    _PRAAT_AVAILABLE = True
+except ImportError:
+    _PRAAT_AVAILABLE = False
 
 
-def analyze_prosody(audio_path: str) -> dict:
+def analyze_prosody(audio_path: str) -> dict | None:
+    if not _PRAAT_AVAILABLE:
+        return None
+
     snd = parselmouth.Sound(audio_path)
 
     # F0 (tono fundamental)

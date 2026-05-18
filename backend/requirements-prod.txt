@@ -16,7 +16,6 @@ passlib[argon2]==1.7.4
 
 # ── Dimensión 1: Fluidez Mecánica y Prosodia ──────────────────────────────────
 faster-whisper==1.2.1
-praat-parselmouth==0.4.5
 ctranslate2==4.7.1
 
 # ── Audio utils ────────────────────────────────────────────────────────────────
