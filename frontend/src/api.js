@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 const api = axios.create({
-  baseURL: 'https://srv-backend.onrender.com'
+  baseURL: 'https://srv-backend-xb06.onrender.com'
 })
 
 api.interceptors.request.use(cfg => {
