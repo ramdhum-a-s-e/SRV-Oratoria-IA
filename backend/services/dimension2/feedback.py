@@ -16,9 +16,14 @@ TTR_BUENO    = 0.50  # >0.50  → 35 pts
 TTR_REGULAR  = 0.30  # >0.30  → 20 pts
                      # ≤0.30  →  5 pts
 
-COH_BUENO    = 0.35  # >0.35  → 25 pts
-COH_REGULAR  = 0.15  # >0.15  → 15 pts
-                     # ≤0.15  →  5 pts
+# Umbrales de coherencia según el método de cálculo:
+# BETO da cosenos comprimidos en rango alto (~0.75-0.95);
+# Jaccard da solapamiento de palabras en rango bajo (~0-0.4).
+COH_UMBRALES = {
+    "beto":    (0.86, 0.79),   # (bueno, regular)
+    "jaccard": (0.35, 0.15),
+    "n/a":     (0.0,  0.0),    # texto corto: no penalizar
+}
 
 
 def _pts_muletillas(count: int) -> int:
@@ -34,9 +39,11 @@ def _pts_ttr(ttr: float) -> int:
     return 5
 
 
-def _pts_coherencia(score: float) -> int:
-    if score > COH_BUENO:    return 25
-    if score > COH_REGULAR:  return 15
+def _pts_coherencia(score: float, metodo: str = "jaccard") -> int:
+    bueno, regular = COH_UMBRALES.get(metodo, COH_UMBRALES["jaccard"])
+    if metodo == "n/a":          return 20   # texto corto → puntaje neutral
+    if score > bueno:            return 25
+    if score > regular:          return 15
     return 5
 
 
@@ -53,10 +60,11 @@ def generate_feedback_d2(muletillas: dict, ttr: dict, coherencia: dict) -> dict:
     tasa      = muletillas.get("muletillas_tasa", 0.0)
     ttr_score = ttr.get("ttr_score", 0.0)
     coh_score = coherencia.get("coherencia_score", 0.0)
+    coh_metodo = coherencia.get("metodo", "jaccard")
 
     pts_mul = _pts_muletillas(count)
     pts_ttr = _pts_ttr(ttr_score)
-    pts_coh = _pts_coherencia(coh_score)
+    pts_coh = _pts_coherencia(coh_score, coh_metodo)
     score_d2 = float(pts_mul + pts_ttr + pts_coh)  # 0-100
     estrellas = score_to_stars(score_d2)
 
@@ -84,14 +92,18 @@ def generate_feedback_d2(muletillas: dict, ttr: dict, coherencia: dict) -> dict:
         msg_ttr = "Repites muchas palabras. Intenta usar palabras diferentes."
         consejo_ttr = "Cada dia aprende 2 palabras nuevas y usaias cuando hables."
 
-    # Mensajes de coherencia
-    if coh_score > COH_BUENO:
+    # Mensajes de coherencia (según los puntos obtenidos, no el score crudo,
+    # porque el rango depende del método BETO vs Jaccard)
+    if pts_coh >= 25:
+        nivel_coh = "bueno"
         msg_coh = "Tus ideas estan bien conectadas. Se entiende lo que dices!"
         consejo_coh = None
-    elif coh_score > COH_REGULAR:
+    elif pts_coh >= 15:
+        nivel_coh = "regular"
         msg_coh = "Tus ideas tienen sentido en general."
         consejo_coh = "Intenta usar palabras como 'porque', 'entonces' o 'despues' para conectar ideas."
     else:
+        nivel_coh = "bajo"
         msg_coh = "Tus ideas saltan de un tema a otro. Trata de organizarlas."
         consejo_coh = "Antes de hablar, piensa: primero digo esto, luego aquello."
 
@@ -103,6 +115,8 @@ def generate_feedback_d2(muletillas: dict, ttr: dict, coherencia: dict) -> dict:
         "detalle_muletillas": msg_muletillas,
         "detalle_vocabulario": msg_ttr,
         "detalle_coherencia": msg_coh,
+        "coherencia_nivel": nivel_coh,
+        "coherencia_metodo": coh_metodo,
         "consejos": consejos,
         "breakdown": {
             "pts_muletillas": pts_mul,

@@ -153,7 +153,8 @@ function SeccionD1({ data }) {
 function SeccionD2({ d2 }) {
   const colMul = d2.muletillas_count === 0 ? C.green : d2.muletillas_count <= 3 ? C.yellow : C.red
   const colTTR = d2.ttr_score > 0.5 ? C.green : d2.ttr_score > 0.3 ? C.yellow : C.red
-  const colCoh = d2.coherencia_score > 0.35 ? C.green : d2.coherencia_score > 0.15 ? C.yellow : C.red
+  // El color de coherencia usa el nivel cualitativo del backend (BETO da rango alto)
+  const colCoh = d2.coherencia_nivel === 'bueno' ? C.green : d2.coherencia_nivel === 'regular' ? C.yellow : C.red
   return (
     <Tarjeta titulo="D2 — Vocabulario y coherencia" accentColor={C.purple}>
       <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>

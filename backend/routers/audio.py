@@ -138,6 +138,8 @@ async def analizar_fluidez(
             "unique_words":    ttr_result["unique_words"],
             "word_count_d2":   ttr_result["word_count"],
             "coherencia_score": coh_result["coherencia_score"],
+            "coherencia_nivel": feedback_d2["coherencia_nivel"],
+            "coherencia_metodo": feedback_d2["coherencia_metodo"],
             "score_d2":        feedback_d2["score_d2"],
             "estrellas":       feedback_d2["estrellas"],
             "detalle_muletillas": feedback_d2["detalle_muletillas"],

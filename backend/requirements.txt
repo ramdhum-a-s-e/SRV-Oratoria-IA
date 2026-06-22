@@ -19,9 +19,14 @@ faster-whisper==1.2.1       # ASR: transcripción + timestamps por palabra
 praat-parselmouth==0.4.5    # Análisis prosódico: F0, jitter, shimmer, HNR
 ctranslate2==4.7.1          # Backend de faster-whisper (GPU/CPU)
 
-# ── Dimensión 2: Claridad y Coherencia (Sprint 2) ─────────────────────────────
-# spacy==3.8.7              # NLP español (instalar con: python -m spacy download es_core_news_lg)
-# sentence-transformers     # Coherencia semántica con BETO
+# ── Dimensión 2: Claridad y Coherencia ────────────────────────────────────────
+spacy==3.8.7                # NLP español: lematización, muletillas, TTR
+transformers==4.46.3        # BETO para coherencia semántica
+torch==2.6.0                # backend de transformers (CPU en producción)
+# Modelo spaCy (instalar aparte):
+#   python -m spacy download es_core_news_sm
+# Modelo BETO (se descarga solo de HuggingFace, o copiar models_cache/beto):
+#   dccuchile/bert-base-spanish-wwm-cased
 
 # ── Dimensión 3: Seguridad Emocional (Sprint 2) ───────────────────────────────
 # transformers              # Wav2Vec2-SER
