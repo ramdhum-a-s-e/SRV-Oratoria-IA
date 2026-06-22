@@ -21,7 +21,7 @@ ctranslate2==4.7.1          # Backend de faster-whisper (GPU/CPU)
 
 # ── Dimensión 2: Claridad y Coherencia ────────────────────────────────────────
 spacy==3.8.7                # NLP español: lematización, muletillas, TTR
-transformers==4.46.3        # BETO para coherencia semántica
+transformers==4.52.4        # BETO para coherencia semántica
 torch==2.6.0                # backend de transformers (CPU en producción)
 # Modelo spaCy (instalar aparte):
 #   python -m spacy download es_core_news_sm
