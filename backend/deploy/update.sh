@@ -1,6 +1,6 @@
 #!/bin/bash
-# update.sh — Actualizar el backend desde GitHub (usar después de cada git push)
-# Ejecutar en Oracle Cloud: bash update.sh
+#update.sh — 
+#oracle
 set -e
 cd /home/ubuntu/SRV-Oratoria-IA
 git pull origin main

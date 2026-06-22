@@ -109,43 +109,80 @@ function ScoreGlobal({ data }) {
   )
 }
 
+/* ── Desplegable de datos técnicos por dimensión ──────────────────────────── */
+function DatosTecnicos({ rows, accentColor }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div style={{ marginTop: '12px' }}>
+      <button onClick={() => setOpen(v => !v)}
+        style={{ width: '100%', padding: '7px 12px', borderRadius: '8px', border: `1px solid ${C.border}`, backgroundColor: 'rgba(0,0,0,0.2)', color: C.muted, cursor: 'pointer', fontSize: '11px', textAlign: 'left' }}>
+        {open ? '▲' : '▼'} Datos tecnicos (para el docente)
+      </button>
+      {open && (
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', color: C.text, marginTop: '6px' }}>
+          <tbody>
+            {rows.map(([k, v]) => (
+              <tr key={k} style={{ borderBottom: `1px solid ${C.border}` }}>
+                <td style={{ padding: '4px 8px', color: C.muted }}>{k}</td>
+                <td style={{ padding: '4px 8px', fontWeight: '500', textAlign: 'right', color: accentColor || C.text }}>{v}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
+  )
+}
+
 /* ── D1 ───────────────────────────────────────────────────────────────────── */
 function SeccionD1({ data }) {
   const fb = data.retroalimentacion
   const t  = THEME[fb.color] || THEME.green
   const ttsTexto = `${fb.mensaje_principal}. ${fb.detalle_velocidad}. ${fb.detalle_pausas}.`
+  const tecnico = [
+    ['PPM', `${data.ppm.ppm} PPM`],
+    ['Palabras detectadas', data.ppm.word_count],
+    ['Duracion habla', `${data.ppm.speech_duration_s}s`],
+    ['Pausas cortas', data.pausas.total_pauses],
+    ['Pausas largas (bloqueos)', data.pausas.long_pauses],
+    ['Pausa promedio', data.pausas.avg_pause_s != null ? `${data.pausas.avg_pause_s}s` : 'N/A'],
+  ]
   return (
-    <>
-      <div style={{ backgroundColor: t.bg, border: `1px solid ${t.border}`, borderRadius: '12px', padding: '14px 18px', marginBottom: '12px', textAlign: 'center' }}>
-        <p style={{ fontSize: '11px', color: t.text, textTransform: 'uppercase', fontWeight: 'bold', margin: '0 0 4px' }}>D1 — Fluidez oral</p>
-        <p style={{ fontSize: '18px', fontWeight: 'bold', color: t.text, margin: 0 }}>{fb.mensaje_principal}</p>
+    <Tarjeta titulo="D1 — Fluidez oral" accentColor={C.blue}>
+      {/* Encabezado con estrellas */}
+      <div style={{ backgroundColor: t.bg, border: `1px solid ${t.border}`, borderRadius: '10px', padding: '12px', marginBottom: '14px', textAlign: 'center' }}>
+        <p style={{ fontSize: '16px', fontWeight: 'bold', color: t.text, margin: 0 }}>{fb.mensaje_principal}</p>
         <Estrellas n={fb.estrellas} color={t.text} />
         <button onClick={() => hablar(ttsTexto)}
-          style={{ marginTop: '4px', padding: '5px 14px', borderRadius: '999px', border: `1px solid ${t.border}`, backgroundColor: 'transparent', color: t.text, cursor: 'pointer', fontSize: '12px' }}>
+          style={{ marginTop: '2px', padding: '5px 14px', borderRadius: '999px', border: `1px solid ${t.border}`, backgroundColor: 'transparent', color: t.text, cursor: 'pointer', fontSize: '12px' }}>
           🔊 Escuchar resultado
         </button>
       </div>
-      <Tarjeta titulo="Velocidad de habla" accentColor={C.blue}>
-        <BarraVelocidad ppm={data.ppm.ppm} />
-        <Fila label="Palabras por minuto" valor={`${data.ppm.ppm} PPM`} color={data.ppm.ppm >= 80 && data.ppm.ppm <= 120 ? C.green : C.yellow} />
-        <Fila label="Palabras detectadas"  valor={data.ppm.word_count} />
-        <Fila label="Tiempo hablando"      valor={`${data.ppm.speech_duration_s}s`} />
-        <p style={{ margin: '8px 0 0', color: C.muted, fontSize: '13px' }}>{fb.detalle_velocidad}</p>
-      </Tarjeta>
-      <Tarjeta titulo="Bloqueos y pausas" accentColor={data.pausas.long_pauses === 0 ? C.green : C.red}>
-        <div style={{ display: 'flex', gap: '20px', margin: '4px 0 10px' }}>
-          <div style={{ textAlign: 'center' }}>
-            <p style={{ fontSize: '40px', fontWeight: 'bold', margin: 0, color: data.pausas.long_pauses === 0 ? C.green : C.red }}>{data.pausas.long_pauses}</p>
-            <p style={{ fontSize: '11px', color: C.muted, margin: 0 }}>bloqueos</p>
-          </div>
-          <div style={{ textAlign: 'center' }}>
-            <p style={{ fontSize: '40px', fontWeight: 'bold', margin: 0, color: C.text }}>{data.pausas.total_pauses}</p>
-            <p style={{ fontSize: '11px', color: C.muted, margin: 0 }}>pausas cortas</p>
-          </div>
+
+      {/* Velocidad de habla */}
+      <p style={{ margin: '0 0 4px', fontSize: '12px', fontWeight: 'bold', color: C.text }}>Velocidad de habla</p>
+      <BarraVelocidad ppm={data.ppm.ppm} />
+      <Fila label="Palabras por minuto" valor={`${data.ppm.ppm} PPM`} color={data.ppm.ppm >= 80 && data.ppm.ppm <= 120 ? C.green : C.yellow} />
+      <Fila label="Palabras detectadas"  valor={data.ppm.word_count} />
+      <Fila label="Tiempo hablando"      valor={`${data.ppm.speech_duration_s}s`} />
+      <p style={{ margin: '8px 0 14px', color: C.muted, fontSize: '13px' }}>{fb.detalle_velocidad}</p>
+
+      {/* Bloqueos y pausas */}
+      <p style={{ margin: '0 0 6px', fontSize: '12px', fontWeight: 'bold', color: C.text }}>Bloqueos y pausas</p>
+      <div style={{ display: 'flex', gap: '20px', margin: '4px 0 10px' }}>
+        <div style={{ textAlign: 'center' }}>
+          <p style={{ fontSize: '40px', fontWeight: 'bold', margin: 0, color: data.pausas.long_pauses === 0 ? C.green : C.red }}>{data.pausas.long_pauses}</p>
+          <p style={{ fontSize: '11px', color: C.muted, margin: 0 }}>bloqueos</p>
         </div>
-        <p style={{ margin: 0, color: C.muted, fontSize: '13px' }}>{fb.detalle_pausas}</p>
-      </Tarjeta>
-    </>
+        <div style={{ textAlign: 'center' }}>
+          <p style={{ fontSize: '40px', fontWeight: 'bold', margin: 0, color: C.text }}>{data.pausas.total_pauses}</p>
+          <p style={{ fontSize: '11px', color: C.muted, margin: 0 }}>pausas cortas</p>
+        </div>
+      </div>
+      <p style={{ margin: 0, color: C.muted, fontSize: '13px' }}>{fb.detalle_pausas}</p>
+
+      <DatosTecnicos rows={tecnico} accentColor={C.blue} />
+    </Tarjeta>
   )
 }
 
@@ -155,6 +192,18 @@ function SeccionD2({ d2 }) {
   const colTTR = d2.ttr_score > 0.5 ? C.green : d2.ttr_score > 0.3 ? C.yellow : C.red
   // El color de coherencia usa el nivel cualitativo del backend (BETO da rango alto)
   const colCoh = d2.coherencia_nivel === 'bueno' ? C.green : d2.coherencia_nivel === 'regular' ? C.yellow : C.red
+  const tecnico = [
+    ['Palabras de contenido', d2.word_count_d2],
+    ['Palabras unicas', d2.unique_words],
+    ['TTR (riqueza lexica)', d2.ttr_score],
+    ['Muletillas (total)', d2.muletillas_count],
+    ['Tasa de muletillas', d2.muletillas_tasa != null ? `${d2.muletillas_tasa}%` : 'N/A'],
+    ['Coherencia (BETO)', d2.coherencia_score],
+    ['Metodo coherencia', d2.coherencia_metodo || 'N/A'],
+  ]
+  if (d2.por_tipo) {
+    for (const [tipo, n] of Object.entries(d2.por_tipo)) tecnico.push([`  · "${tipo}"`, n])
+  }
   return (
     <Tarjeta titulo="D2 — Vocabulario y coherencia" accentColor={C.purple}>
       <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
@@ -181,12 +230,22 @@ function SeccionD2({ d2 }) {
           ))}
         </div>
       )}
+      <DatosTecnicos rows={tecnico} accentColor={C.purple} />
     </Tarjeta>
   )
 }
 
 /* ── D3 ───────────────────────────────────────────────────────────────────── */
-function SeccionD3({ d3 }) {
+function SeccionD3({ d3, prosodia }) {
+  const p = prosodia || {}
+  const tecnico = [
+    ['F0 promedio', p.f0_mean_hz ? `${p.f0_mean_hz} Hz` : 'N/A'],
+    ['F0 std (variacion)', p.f0_std_hz ? `${p.f0_std_hz} Hz` : 'N/A'],
+    ['Jitter', p.jitter_pct != null ? `${p.jitter_pct}%` : 'N/A'],
+    ['Shimmer', p.shimmer_db != null ? `${p.shimmer_db} dB` : 'N/A'],
+    ['HNR (calidad voz)', p.hnr_db != null ? `${p.hnr_db} dB` : 'N/A'],
+    ['Intensidad (volumen)', p.intensity_mean_db != null ? `${p.intensity_mean_db} dB` : 'N/A'],
+  ]
   return (
     <Tarjeta titulo="D3 — Expresividad vocal" accentColor={C.orange}>
       <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
@@ -206,6 +265,7 @@ function SeccionD3({ d3 }) {
       <p style={{ margin: '4px 0', color: C.muted, fontSize: '12px' }}>{d3.detalle_tono}</p>
       <p style={{ margin: '4px 0', color: C.muted, fontSize: '12px' }}>{d3.detalle_calidad}</p>
       <p style={{ margin: '4px 0', color: C.muted, fontSize: '12px' }}>{d3.detalle_volumen}</p>
+      <DatosTecnicos rows={tecnico} accentColor={C.orange} />
     </Tarjeta>
   )
 }
@@ -218,7 +278,7 @@ function Resultados({ data }) {
       <ScoreGlobal data={data} />
       <SeccionD1 data={data} />
       <SeccionD2 d2={data.d2} />
-      <SeccionD3 d3={data.d3} />
+      <SeccionD3 d3={data.d3} prosodia={data.prosodia} />
       {todosConsejos.length > 0 && (
         <div style={{ backgroundColor: '#1e3a5f', border: '1px solid #2563eb', borderRadius: '12px', padding: '14px 18px', marginBottom: '12px', textAlign: 'left' }}>
           <p style={{ margin: '0 0 6px', fontWeight: 'bold', color: '#93c5fd', fontSize: '13px' }}>💡 Para mejorar:</p>
@@ -228,42 +288,6 @@ function Resultados({ data }) {
       <Tarjeta titulo="Lo que dijiste">
         <p style={{ margin: 0, color: C.text, fontSize: '13px', lineHeight: '1.7', fontStyle: 'italic' }}>"{data.transcripcion || '(no se detecto texto)'}"</p>
       </Tarjeta>
-      <DetallesDocente prosodia={data.prosodia} ppm={data.ppm} />
-    </div>
-  )
-}
-
-function DetallesDocente({ prosodia, ppm }) {
-  const [open, setOpen] = useState(false)
-  const p = prosodia || {}
-  return (
-    <div style={{ marginTop: '8px', textAlign: 'left' }}>
-      <button onClick={() => setOpen(v => !v)}
-        style={{ width: '100%', padding: '8px 14px', borderRadius: '8px', border: `1px solid ${C.border}`, backgroundColor: C.card, color: C.muted, cursor: 'pointer', fontSize: '12px', textAlign: 'left' }}>
-        {open ? '▲' : '▼'} Datos tecnicos (para el docente)
-      </button>
-      {open && (
-        <div style={{ backgroundColor: C.card, border: `1px solid ${C.border}`, borderTop: 'none', borderRadius: '0 0 8px 8px', padding: '12px' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', color: C.text }}>
-            <tbody>
-              {[
-                ['PPM', ppm?.ppm], ['Palabras', ppm?.word_count], ['Duracion habla', `${ppm?.speech_duration_s}s`],
-                ['F0 promedio', p.f0_mean_hz ? `${p.f0_mean_hz} Hz` : 'N/A'],
-                ['F0 std', p.f0_std_hz ? `${p.f0_std_hz} Hz` : 'N/A'],
-                ['Jitter', p.jitter_pct != null ? `${p.jitter_pct}%` : 'N/A'],
-                ['Shimmer', p.shimmer_db != null ? `${p.shimmer_db} dB` : 'N/A'],
-                ['HNR', p.hnr_db != null ? `${p.hnr_db} dB` : 'N/A'],
-                ['Intensidad', p.intensity_mean_db != null ? `${p.intensity_mean_db} dB` : 'N/A'],
-              ].map(([k, v]) => (
-                <tr key={k} style={{ borderBottom: `1px solid ${C.border}` }}>
-                  <td style={{ padding: '4px 8px', color: C.muted }}>{k}</td>
-                  <td style={{ padding: '4px 8px', fontWeight: '500' }}>{v}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
     </div>
   )
 }
