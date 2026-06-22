@@ -20,11 +20,20 @@ def transcribe(audio_path: str, model: WhisperModel) -> tuple[list[WordToken], s
     return words, transcript
 
 
+LONG_PAUSE_S = 1.5  # pausa > 1.5s = bloqueo, no cuenta como tiempo de habla
+
+
 def calculate_ppm(words: list[WordToken]) -> dict:
     if not words:
         return {"ppm": 0.0, "word_count": 0, "speech_duration_s": 0.0}
 
-    speech_duration = words[-1].end - words[0].start
+    # Suma duración de cada palabra + gaps cortos (excluye bloqueos)
+    speech_duration = sum(w.end - w.start for w in words)
+    for i in range(1, len(words)):
+        gap = words[i].start - words[i - 1].end
+        if gap < LONG_PAUSE_S:
+            speech_duration += gap
+
     ppm = len(words) / (speech_duration / 60) if speech_duration > 0 else 0.0
 
     return {

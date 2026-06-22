@@ -7,7 +7,8 @@ import api from '../api'
 const C = {
   bg: '#0f172a', card: '#1e293b', border: '#334155', text: '#f1f5f9', muted: '#94a3b8',
   blue: '#6366f1', green: '#22c55e', greenBg: '#14532d', yellow: '#facc15', yellowBg: '#713f12',
-  red: '#f87171', redBg: '#7f1d1d',
+  red: '#f87171', redBg: '#7f1d1d', purple: '#a78bfa', purpleBg: '#2e1065',
+  orange: '#fb923c', orangeBg: '#7c2d12',
 }
 const THEME = {
   green:  { bg: C.greenBg,  border: C.green,  text: C.green },
@@ -23,55 +24,240 @@ function hablar(texto) {
   window.speechSynthesis.speak(u)
 }
 
-function Estrellas({ n }) {
+function Estrellas({ n, color }) {
   return (
-    <div style={{ fontSize: '36px', letterSpacing: '4px', margin: '8px 0' }}>
-      {[1,2,3,4,5].map(i => <span key={i} style={{ opacity: i <= n ? 1 : 0.2 }}>★</span>)}
+    <div style={{ fontSize: '30px', letterSpacing: '4px', margin: '6px 0' }}>
+      {[1,2,3,4,5].map(i => (
+        <span key={i} style={{ opacity: i <= n ? 1 : 0.2, color: color || C.yellow }}>★</span>
+      ))}
     </div>
   )
 }
 
 function BarraVelocidad({ ppm }) {
   const pct = Math.min(100, Math.max(0, ((ppm - 40) / 140) * 100))
-  const zonaOkLeft = ((80 - 40) / 140) * 100
+  const zonaOkLeft  = ((80 - 40) / 140) * 100
   const zonaOkWidth = (40 / 140) * 100
   const color = ppm >= 80 && ppm <= 120 ? C.green : ppm > 120 ? C.red : C.yellow
   return (
-    <div style={{ margin: '12px 0' }}>
-      <div style={{ position: 'relative', height: '28px', borderRadius: '999px', backgroundColor: '#1e293b', border: `1px solid ${C.border}`, overflow: 'hidden' }}>
+    <div style={{ margin: '10px 0' }}>
+      <div style={{ position: 'relative', height: '24px', borderRadius: '999px', backgroundColor: '#1e293b', border: `1px solid ${C.border}`, overflow: 'hidden' }}>
         <div style={{ position: 'absolute', left: `${zonaOkLeft}%`, width: `${zonaOkWidth}%`, height: '100%', backgroundColor: '#14532d', opacity: 0.6 }} />
         <div style={{ position: 'absolute', left: `${pct}%`, transform: 'translateX(-50%)', top: '2px', bottom: '2px', width: '6px', borderRadius: '999px', backgroundColor: color, boxShadow: `0 0 8px ${color}` }} />
       </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: C.muted, marginTop: '4px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: C.muted, marginTop: '3px' }}>
         <span>Muy lento</span><span style={{ color: C.green }}>Ideal: 80-120 PPM</span><span>Muy rapido</span>
       </div>
     </div>
   )
 }
 
+function ScoreBar({ score, color }) {
+  return (
+    <div style={{ margin: '6px 0 10px' }}>
+      <div style={{ height: '8px', borderRadius: '999px', backgroundColor: C.border, overflow: 'hidden' }}>
+        <div style={{ height: '100%', width: `${score}%`, borderRadius: '999px', backgroundColor: color }} />
+      </div>
+      <p style={{ fontSize: '11px', color: C.muted, margin: '2px 0 0', textAlign: 'right' }}>{score} / 100 pts</p>
+    </div>
+  )
+}
+
+function Tarjeta({ titulo, accentColor, children }) {
+  return (
+    <div style={{ backgroundColor: C.card, border: `1px solid ${accentColor || C.border}`, borderRadius: '12px', padding: '16px 18px', marginBottom: '12px', textAlign: 'left' }}>
+      <p style={{ margin: '0 0 10px', fontWeight: 'bold', color: accentColor || C.text, fontSize: '13px' }}>{titulo}</p>
+      {children}
+    </div>
+  )
+}
+
+function Fila({ label, valor, color }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: `1px solid ${C.border}` }}>
+      <span style={{ fontSize: '12px', color: C.muted }}>{label}</span>
+      <span style={{ fontSize: '12px', fontWeight: 'bold', color: color || C.text }}>{valor}</span>
+    </div>
+  )
+}
+
+/* ── Score Global ─────────────────────────────────────────────────────────── */
+function ScoreGlobal({ data }) {
+  const sg = data.score_global
+  const t = THEME[sg.color] || THEME.green
+  const d = sg.scores_por_dimension
+  return (
+    <div style={{ backgroundColor: t.bg, border: `2px solid ${t.border}`, borderRadius: '16px', padding: '22px 20px', marginBottom: '14px', textAlign: 'center' }}>
+      <p style={{ margin: '0 0 2px', fontSize: '11px', color: t.text, textTransform: 'uppercase', fontWeight: 'bold', letterSpacing: '1px' }}>Resultado Final</p>
+      <p style={{ fontSize: '52px', fontWeight: 'bold', color: t.text, margin: '4px 0 0', lineHeight: 1 }}>{sg.score_global}</p>
+      <p style={{ fontSize: '12px', color: t.text, margin: '2px 0 6px', opacity: 0.8 }}>puntos de 100</p>
+      <Estrellas n={sg.estrellas} color={t.text} />
+      <p style={{ fontSize: '18px', fontWeight: 'bold', color: t.text, margin: '6px 0 4px' }}>{sg.nivel}</p>
+      <p style={{ fontSize: '14px', color: t.text, margin: 0 }}>{sg.mensaje}</p>
+      <div style={{ marginTop: '16px', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+        {[['D1 Fluidez', d.d1, C.blue], ['D2 Vocabulario', d.d2, C.purple], ['D3 Expresividad', d.d3, C.orange]].map(([lbl, val, col]) => (
+          <div key={lbl} style={{ backgroundColor: 'rgba(0,0,0,0.25)', borderRadius: '8px', padding: '10px 6px' }}>
+            <p style={{ fontSize: '10px', color: t.text, margin: '0 0 4px', opacity: 0.8 }}>{lbl}</p>
+            <p style={{ fontSize: '22px', fontWeight: 'bold', color: col, margin: '0 0 4px' }}>{val}</p>
+            <div style={{ height: '4px', borderRadius: '2px', backgroundColor: 'rgba(255,255,255,0.1)' }}>
+              <div style={{ height: '100%', width: `${val}%`, borderRadius: '2px', backgroundColor: col }} />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/* ── D1 ───────────────────────────────────────────────────────────────────── */
+function SeccionD1({ data }) {
+  const fb = data.retroalimentacion
+  const t  = THEME[fb.color] || THEME.green
+  const ttsTexto = `${fb.mensaje_principal}. ${fb.detalle_velocidad}. ${fb.detalle_pausas}.`
+  return (
+    <>
+      <div style={{ backgroundColor: t.bg, border: `1px solid ${t.border}`, borderRadius: '12px', padding: '14px 18px', marginBottom: '12px', textAlign: 'center' }}>
+        <p style={{ fontSize: '11px', color: t.text, textTransform: 'uppercase', fontWeight: 'bold', margin: '0 0 4px' }}>D1 — Fluidez oral</p>
+        <p style={{ fontSize: '18px', fontWeight: 'bold', color: t.text, margin: 0 }}>{fb.mensaje_principal}</p>
+        <Estrellas n={fb.estrellas} color={t.text} />
+        <button onClick={() => hablar(ttsTexto)}
+          style={{ marginTop: '4px', padding: '5px 14px', borderRadius: '999px', border: `1px solid ${t.border}`, backgroundColor: 'transparent', color: t.text, cursor: 'pointer', fontSize: '12px' }}>
+          🔊 Escuchar resultado
+        </button>
+      </div>
+      <Tarjeta titulo="Velocidad de habla" accentColor={C.blue}>
+        <BarraVelocidad ppm={data.ppm.ppm} />
+        <Fila label="Palabras por minuto" valor={`${data.ppm.ppm} PPM`} color={data.ppm.ppm >= 80 && data.ppm.ppm <= 120 ? C.green : C.yellow} />
+        <Fila label="Palabras detectadas"  valor={data.ppm.word_count} />
+        <Fila label="Tiempo hablando"      valor={`${data.ppm.speech_duration_s}s`} />
+        <p style={{ margin: '8px 0 0', color: C.muted, fontSize: '13px' }}>{fb.detalle_velocidad}</p>
+      </Tarjeta>
+      <Tarjeta titulo="Bloqueos y pausas" accentColor={data.pausas.long_pauses === 0 ? C.green : C.red}>
+        <div style={{ display: 'flex', gap: '20px', margin: '4px 0 10px' }}>
+          <div style={{ textAlign: 'center' }}>
+            <p style={{ fontSize: '40px', fontWeight: 'bold', margin: 0, color: data.pausas.long_pauses === 0 ? C.green : C.red }}>{data.pausas.long_pauses}</p>
+            <p style={{ fontSize: '11px', color: C.muted, margin: 0 }}>bloqueos</p>
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <p style={{ fontSize: '40px', fontWeight: 'bold', margin: 0, color: C.text }}>{data.pausas.total_pauses}</p>
+            <p style={{ fontSize: '11px', color: C.muted, margin: 0 }}>pausas cortas</p>
+          </div>
+        </div>
+        <p style={{ margin: 0, color: C.muted, fontSize: '13px' }}>{fb.detalle_pausas}</p>
+      </Tarjeta>
+    </>
+  )
+}
+
+/* ── D2 ───────────────────────────────────────────────────────────────────── */
+function SeccionD2({ d2 }) {
+  const colMul = d2.muletillas_count === 0 ? C.green : d2.muletillas_count <= 3 ? C.yellow : C.red
+  const colTTR = d2.ttr_score > 0.5 ? C.green : d2.ttr_score > 0.3 ? C.yellow : C.red
+  // El color de coherencia usa el nivel cualitativo del backend (BETO da rango alto)
+  const colCoh = d2.coherencia_nivel === 'bueno' ? C.green : d2.coherencia_nivel === 'regular' ? C.yellow : C.red
+  return (
+    <Tarjeta titulo="D2 — Vocabulario y coherencia" accentColor={C.purple}>
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+        {[
+          ['Muletillas', d2.muletillas_count, '', colMul],
+          ['Variedad',   `${Math.round(d2.ttr_score * 100)}%`, 'TTR', colTTR],
+          ['Coherencia', `${Math.round(d2.coherencia_score * 100)}%`, '', colCoh],
+        ].map(([lbl, val, sub, col]) => (
+          <div key={lbl} style={{ flex: 1, textAlign: 'center', backgroundColor: 'rgba(167,139,250,0.08)', borderRadius: '8px', padding: '10px 4px' }}>
+            <p style={{ fontSize: '26px', fontWeight: 'bold', margin: 0, color: col }}>{val}</p>
+            {sub && <p style={{ fontSize: '9px', color: C.muted, margin: 0 }}>{sub}</p>}
+            <p style={{ fontSize: '11px', color: C.muted, margin: '2px 0 0' }}>{lbl}</p>
+          </div>
+        ))}
+      </div>
+      <ScoreBar score={d2.score_d2} color={C.purple} />
+      <p style={{ margin: '4px 0', color: C.muted, fontSize: '12px' }}>{d2.detalle_muletillas}</p>
+      <p style={{ margin: '4px 0', color: C.muted, fontSize: '12px' }}>{d2.detalle_vocabulario}</p>
+      <p style={{ margin: '4px 0', color: C.muted, fontSize: '12px' }}>{d2.detalle_coherencia}</p>
+      {d2.muletillas_list?.length > 0 && (
+        <div style={{ marginTop: '8px', display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
+          {d2.muletillas_list.map(m => (
+            <span key={m} style={{ padding: '2px 10px', borderRadius: '999px', backgroundColor: 'rgba(251,146,60,0.15)', border: `1px solid ${C.orange}`, color: C.orange, fontSize: '11px' }}>{m}</span>
+          ))}
+        </div>
+      )}
+    </Tarjeta>
+  )
+}
+
+/* ── D3 ───────────────────────────────────────────────────────────────────── */
+function SeccionD3({ d3 }) {
+  return (
+    <Tarjeta titulo="D3 — Expresividad vocal" accentColor={C.orange}>
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+        {[
+          ['Variacion tono', d3.breakdown.variacion_tonal_pts, 40, C.orange],
+          ['Calidad voz',    d3.breakdown.calidad_hnr_pts,     30, C.yellow],
+          ['Volumen',        d3.breakdown.volumen_pts,         30, C.green],
+        ].map(([lbl, val, max, col]) => (
+          <div key={lbl} style={{ flex: 1, textAlign: 'center', backgroundColor: 'rgba(251,146,60,0.08)', borderRadius: '8px', padding: '10px 4px' }}>
+            <p style={{ fontSize: '24px', fontWeight: 'bold', margin: 0, color: col }}>{val}</p>
+            <p style={{ fontSize: '9px', color: C.muted, margin: 0 }}>/{max} pts</p>
+            <p style={{ fontSize: '11px', color: C.muted, margin: '2px 0 0' }}>{lbl}</p>
+          </div>
+        ))}
+      </div>
+      <ScoreBar score={d3.score_d3} color={C.orange} />
+      <p style={{ margin: '4px 0', color: C.muted, fontSize: '12px' }}>{d3.detalle_tono}</p>
+      <p style={{ margin: '4px 0', color: C.muted, fontSize: '12px' }}>{d3.detalle_calidad}</p>
+      <p style={{ margin: '4px 0', color: C.muted, fontSize: '12px' }}>{d3.detalle_volumen}</p>
+    </Tarjeta>
+  )
+}
+
+/* ── Resultados completos ─────────────────────────────────────────────────── */
+function Resultados({ data }) {
+  const todosConsejos = [...(data.retroalimentacion?.consejos || []), ...(data.d2?.consejos || [])]
+  return (
+    <div style={{ maxWidth: '680px', margin: '18px auto', textAlign: 'center' }}>
+      <ScoreGlobal data={data} />
+      <SeccionD1 data={data} />
+      <SeccionD2 d2={data.d2} />
+      <SeccionD3 d3={data.d3} />
+      {todosConsejos.length > 0 && (
+        <div style={{ backgroundColor: '#1e3a5f', border: '1px solid #2563eb', borderRadius: '12px', padding: '14px 18px', marginBottom: '12px', textAlign: 'left' }}>
+          <p style={{ margin: '0 0 6px', fontWeight: 'bold', color: '#93c5fd', fontSize: '13px' }}>💡 Para mejorar:</p>
+          {todosConsejos.map((c, i) => <p key={i} style={{ margin: '3px 0', color: '#bfdbfe', fontSize: '13px' }}>• {c}</p>)}
+        </div>
+      )}
+      <Tarjeta titulo="Lo que dijiste">
+        <p style={{ margin: 0, color: C.text, fontSize: '13px', lineHeight: '1.7', fontStyle: 'italic' }}>"{data.transcripcion || '(no se detecto texto)'}"</p>
+      </Tarjeta>
+      <DetallesDocente prosodia={data.prosodia} ppm={data.ppm} />
+    </div>
+  )
+}
+
 function DetallesDocente({ prosodia, ppm }) {
-  const [abierto, setAbierto] = useState(false)
+  const [open, setOpen] = useState(false)
   const p = prosodia || {}
   return (
-    <div style={{ marginTop: '12px', textAlign: 'left' }}>
-      <button onClick={() => setAbierto(v => !v)}
-        style={{ width: '100%', padding: '10px 16px', borderRadius: '8px', border: `1px solid ${C.border}`, backgroundColor: C.card, color: C.muted, cursor: 'pointer', fontSize: '13px', textAlign: 'left' }}>
-        {abierto ? '▲' : '▼'} Ver datos tecnicos (para el docente)
+    <div style={{ marginTop: '8px', textAlign: 'left' }}>
+      <button onClick={() => setOpen(v => !v)}
+        style={{ width: '100%', padding: '8px 14px', borderRadius: '8px', border: `1px solid ${C.border}`, backgroundColor: C.card, color: C.muted, cursor: 'pointer', fontSize: '12px', textAlign: 'left' }}>
+        {open ? '▲' : '▼'} Datos tecnicos (para el docente)
       </button>
-      {abierto && (
-        <div style={{ backgroundColor: C.card, border: `1px solid ${C.border}`, borderTop: 'none', borderRadius: '0 0 8px 8px', padding: '16px' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', color: C.text }}>
+      {open && (
+        <div style={{ backgroundColor: C.card, border: `1px solid ${C.border}`, borderTop: 'none', borderRadius: '0 0 8px 8px', padding: '12px' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', color: C.text }}>
             <tbody>
               {[
-                ['PPM exacto', ppm?.ppm], ['Palabras', ppm?.word_count], ['Duracion', `${ppm?.speech_duration_s}s`],
+                ['PPM', ppm?.ppm], ['Palabras', ppm?.word_count], ['Duracion habla', `${ppm?.speech_duration_s}s`],
                 ['F0 promedio', p.f0_mean_hz ? `${p.f0_mean_hz} Hz` : 'N/A'],
+                ['F0 std', p.f0_std_hz ? `${p.f0_std_hz} Hz` : 'N/A'],
                 ['Jitter', p.jitter_pct != null ? `${p.jitter_pct}%` : 'N/A'],
                 ['Shimmer', p.shimmer_db != null ? `${p.shimmer_db} dB` : 'N/A'],
                 ['HNR', p.hnr_db != null ? `${p.hnr_db} dB` : 'N/A'],
+                ['Intensidad', p.intensity_mean_db != null ? `${p.intensity_mean_db} dB` : 'N/A'],
               ].map(([k, v]) => (
                 <tr key={k} style={{ borderBottom: `1px solid ${C.border}` }}>
-                  <td style={{ padding: '5px 8px', color: C.muted }}>{k}</td>
-                  <td style={{ padding: '5px 8px', fontWeight: '500' }}>{v}</td>
+                  <td style={{ padding: '4px 8px', color: C.muted }}>{k}</td>
+                  <td style={{ padding: '4px 8px', fontWeight: '500' }}>{v}</td>
                 </tr>
               ))}
             </tbody>
@@ -82,72 +268,21 @@ function DetallesDocente({ prosodia, ppm }) {
   )
 }
 
-function Resultados({ data }) {
-  const fb = data.retroalimentacion
-  const t = THEME[fb.color] || THEME.green
-  const textoCompleto = `${fb.mensaje_principal} ${fb.detalle_velocidad} ${fb.detalle_pausas} ${fb.consejos.join(' ')}`
-
-  return (
-    <div style={{ maxWidth: '680px', margin: '20px auto', textAlign: 'center' }}>
-      <div style={{ backgroundColor: t.bg, border: `2px solid ${t.border}`, borderRadius: '16px', padding: '24px', marginBottom: '16px' }}>
-        <p style={{ fontSize: '26px', fontWeight: 'bold', color: t.text, margin: '0 0 4px' }}>{fb.mensaje_principal}</p>
-        <Estrellas n={fb.estrellas} />
-        <button onClick={() => hablar(textoCompleto)}
-          style={{ marginTop: '8px', padding: '8px 20px', borderRadius: '999px', border: `1px solid ${t.border}`, backgroundColor: 'transparent', color: t.text, cursor: 'pointer', fontSize: '14px' }}>
-          🔊 Escuchar resultado
-        </button>
-      </div>
-      <div style={{ backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: '12px', padding: '16px 20px', marginBottom: '12px', textAlign: 'left' }}>
-        <p style={{ margin: '0 0 4px', fontWeight: 'bold', color: C.text, fontSize: '15px' }}>Que tan rapido hablaste?</p>
-        <BarraVelocidad ppm={data.ppm.ppm} />
-        <p style={{ margin: '6px 0 0', color: C.muted, fontSize: '14px' }}>{fb.detalle_velocidad}</p>
-        <p style={{ margin: '4px 0 0', color: C.muted, fontSize: '13px' }}>
-          Dijiste <strong style={{ color: C.text }}>{data.ppm.word_count} palabras</strong> en <strong style={{ color: C.text }}>{data.ppm.speech_duration_s}s</strong>
-        </p>
-      </div>
-      <div style={{ backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: '12px', padding: '16px 20px', marginBottom: '12px', textAlign: 'left' }}>
-        <p style={{ margin: '0 0 8px', fontWeight: 'bold', color: C.text, fontSize: '15px' }}>Te quedaste sin palabras?</p>
-        <div style={{ display: 'flex', gap: '16px' }}>
-          <div style={{ textAlign: 'center' }}>
-            <p style={{ fontSize: '32px', fontWeight: 'bold', margin: 0, color: data.pausas.long_pauses === 0 ? C.green : C.red }}>{data.pausas.long_pauses}</p>
-            <p style={{ fontSize: '12px', color: C.muted, margin: 0 }}>bloqueos</p>
-          </div>
-          <div style={{ textAlign: 'center' }}>
-            <p style={{ fontSize: '32px', fontWeight: 'bold', margin: 0, color: C.text }}>{data.pausas.total_pauses}</p>
-            <p style={{ fontSize: '12px', color: C.muted, margin: 0 }}>pausas cortas</p>
-          </div>
-        </div>
-        <p style={{ margin: '8px 0 0', color: C.muted, fontSize: '14px' }}>{fb.detalle_pausas}</p>
-      </div>
-      {fb.consejos.length > 0 && (
-        <div style={{ backgroundColor: '#1e3a5f', border: '1px solid #2563eb', borderRadius: '12px', padding: '16px 20px', marginBottom: '12px', textAlign: 'left' }}>
-          <p style={{ margin: '0 0 8px', fontWeight: 'bold', color: '#93c5fd', fontSize: '15px' }}>💡 Para mejorar:</p>
-          {fb.consejos.map((c, i) => <p key={i} style={{ margin: '4px 0', color: '#bfdbfe', fontSize: '14px' }}>• {c}</p>)}
-        </div>
-      )}
-      <div style={{ backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: '12px', padding: '16px 20px', textAlign: 'left' }}>
-        <p style={{ margin: '0 0 6px', fontWeight: 'bold', color: C.muted, fontSize: '12px', textTransform: 'uppercase' }}>Lo que dijiste:</p>
-        <p style={{ margin: 0, color: C.text, fontSize: '14px', lineHeight: '1.7', fontStyle: 'italic' }}>"{data.transcripcion || '(no se detecto texto)'}"</p>
-      </div>
-      <DetallesDocente prosodia={data.prosodia} ppm={data.ppm} />
-    </div>
-  )
-}
-
+/* ── Página principal ─────────────────────────────────────────────────────── */
 export default function Practica() {
-  const [params] = useSearchParams()
-  const navigate = useNavigate()
-  const modo = params.get('modo') || 'libre'
-  const textoId = params.get('texto_id')
+  const [params]  = useSearchParams()
+  const navigate  = useNavigate()
+  const modo      = params.get('modo') || 'libre'
+  const textoId   = params.get('texto_id')
 
-  const [texto, setTexto] = useState(null)
-  const containerRef = useRef(null)
-  const wavesurferRef = useRef(null)
-  const recordRef = useRef(null)
-  const [grabando, setGrabando] = useState(false)
-  const [analizando, setAnalizando] = useState(false)
-  const [resultado, setResultado] = useState(null)
-  const [error, setError] = useState(null)
+  const [texto,      setTexto]     = useState(null)
+  const containerRef               = useRef(null)
+  const wavesurferRef              = useRef(null)
+  const recordRef                  = useRef(null)
+  const [grabando,   setGrabando]  = useState(false)
+  const [analizando, setAnalizando]= useState(false)
+  const [resultado,  setResultado] = useState(null)
+  const [error,      setError]     = useState(null)
 
   useEffect(() => {
     if (modo === 'lectura' && textoId) {
@@ -175,14 +310,14 @@ export default function Practica() {
       recordRef.current.stopRecording()
       recordRef.current.on('record-end', async blob => {
         setAnalizando(true)
-        const formData = new FormData()
-        formData.append('file', blob, 'practica.wav')
-        formData.append('modo', modo)
-        if (textoId) formData.append('texto_id', textoId)
+        const fd = new FormData()
+        fd.append('file', blob, 'practica.wav')
+        fd.append('modo', modo)
+        if (textoId) fd.append('texto_id', textoId)
         try {
-          const res = await api.post('/audio/analizar', formData)
+          const res = await api.post('/audio/analizar', fd)
           setResultado(res.data)
-          hablar(res.data.retroalimentacion.mensaje_principal)
+          hablar(res.data.score_global.mensaje)
         } catch (err) {
           if (err.response?.status === 401) { navigate('/login'); return }
           setError('Error al analizar. Verifica que el servidor este encendido.')
@@ -192,51 +327,44 @@ export default function Practica() {
   }
 
   return (
-    <div style={{ padding: '32px 20px', textAlign: 'center', backgroundColor: C.bg, color: C.text, minHeight: '100vh', fontFamily: 'system-ui, sans-serif' }}>
+    <div style={{ padding: '28px 20px', textAlign: 'center', backgroundColor: C.bg, color: C.text, minHeight: '100vh', fontFamily: 'system-ui, sans-serif' }}>
       <div style={{ maxWidth: '680px', margin: '0 auto' }}>
         <button onClick={() => navigate('/modos')}
-          style={{ background: 'none', border: 'none', color: C.muted, cursor: 'pointer', fontSize: '14px', marginBottom: '16px', padding: 0, display: 'block' }}>
+          style={{ background: 'none', border: 'none', color: C.muted, cursor: 'pointer', fontSize: '13px', marginBottom: '14px', padding: 0, display: 'block' }}>
           ← Cambiar modo
         </button>
-
-        <h1 style={{ fontSize: '22px', margin: '0 0 4px' }}>
+        <h1 style={{ fontSize: '20px', margin: '0 0 4px' }}>
           {modo === 'lectura' ? '📖 Practica de lectura' : '🎙️ Expresion oral libre'}
         </h1>
-        <p style={{ color: C.muted, margin: '0 0 20px', fontSize: '14px' }}>
+        <p style={{ color: C.muted, margin: '0 0 18px', fontSize: '13px' }}>
           {modo === 'lectura' ? 'Lee el texto en voz alta' : 'Habla sobre el tema que quieras'}
         </p>
-
         {texto && (
-          <div style={{ backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: '12px', padding: '20px', marginBottom: '20px', textAlign: 'left' }}>
-            <p style={{ color: C.muted, fontSize: '12px', margin: '0 0 8px', textTransform: 'uppercase', fontWeight: 'bold' }}>{texto.titulo}</p>
+          <div style={{ backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: '12px', padding: '18px', marginBottom: '18px', textAlign: 'left' }}>
+            <p style={{ color: C.muted, fontSize: '11px', margin: '0 0 6px', textTransform: 'uppercase', fontWeight: 'bold' }}>{texto.titulo}</p>
             <p style={{ color: C.text, fontSize: '16px', lineHeight: '1.8', margin: 0 }}>{texto.contenido}</p>
           </div>
         )}
-
         {modo === 'libre' && !resultado && (
-          <div style={{ backgroundColor: '#1e3a5f', border: '1px solid #2563eb', borderRadius: '12px', padding: '14px 18px', marginBottom: '20px' }}>
-            <p style={{ color: '#93c5fd', margin: 0, fontSize: '14px' }}>💡 Puedes hablar sobre: tu dia, tu animal favorito, tu familia, una pelicula que viste...</p>
+          <div style={{ backgroundColor: '#1e3a5f', border: '1px solid #2563eb', borderRadius: '10px', padding: '12px 16px', marginBottom: '18px' }}>
+            <p style={{ color: '#93c5fd', margin: 0, fontSize: '13px' }}>💡 Habla sobre: tu dia, tu animal favorito, tu familia, una pelicula que viste...</p>
           </div>
         )}
-
-        <div ref={containerRef} style={{ margin: '0 auto 20px', width: '100%', minHeight: '80px', border: `1px solid ${C.border}`, borderRadius: '12px', overflow: 'hidden', backgroundColor: C.card }} />
-
+        <div ref={containerRef} style={{ margin: '0 auto 18px', width: '100%', minHeight: '80px', border: `1px solid ${C.border}`, borderRadius: '12px', overflow: 'hidden', backgroundColor: C.card }} />
         <button onClick={manejarGrabacion} disabled={analizando}
-          style={{ padding: '18px 48px', fontSize: '18px', fontWeight: 'bold', borderRadius: '999px', border: 'none',
+          style={{ padding: '16px 44px', fontSize: '17px', fontWeight: 'bold', borderRadius: '999px', border: 'none',
             cursor: analizando ? 'not-allowed' : 'pointer',
             backgroundColor: analizando ? '#374151' : grabando ? '#dc2626' : C.blue,
             color: 'white', boxShadow: grabando ? '0 0 20px rgba(220,38,38,0.5)' : analizando ? 'none' : `0 0 20px rgba(99,102,241,0.4)` }}>
           {analizando ? 'Analizando...' : grabando ? '⏹  Listo, analizar' : '🎤  Empezar a hablar'}
         </button>
-
-        {grabando && <p style={{ color: C.red, marginTop: '12px', fontSize: '15px' }}>Grabando... cuando termines presiona el boton</p>}
-        {analizando && <p style={{ color: C.muted, marginTop: '16px', fontSize: '14px' }}>Procesando tu voz, espera un momento...</p>}
-        {error && <div style={{ marginTop: '16px', backgroundColor: C.redBg, border: `1px solid ${C.red}`, borderRadius: '10px', padding: '12px 16px', color: C.red, fontSize: '14px' }}>{error}</div>}
-        {resultado && <Resultados data={resultado} />}
-
-        {resultado && (
+        {grabando   && <p style={{ color: C.red,  marginTop: '10px', fontSize: '14px' }}>Grabando... cuando termines presiona el boton</p>}
+        {analizando && <p style={{ color: C.muted, marginTop: '14px', fontSize: '13px' }}>Procesando tu voz con IA, espera un momento...</p>}
+        {error      && <div style={{ marginTop: '14px', backgroundColor: C.redBg, border: `1px solid ${C.red}`, borderRadius: '10px', padding: '12px', color: C.red, fontSize: '13px' }}>{error}</div>}
+        {resultado  && <Resultados data={resultado} />}
+        {resultado  && (
           <button onClick={() => navigate('/historial')}
-            style={{ marginTop: '16px', padding: '12px 28px', borderRadius: '8px', border: `1px solid ${C.border}`, backgroundColor: 'transparent', color: C.muted, cursor: 'pointer', fontSize: '14px' }}>
+            style={{ marginTop: '14px', padding: '10px 24px', borderRadius: '8px', border: `1px solid ${C.border}`, backgroundColor: 'transparent', color: C.muted, cursor: 'pointer', fontSize: '13px' }}>
             Ver mi historial →
           </button>
         )}

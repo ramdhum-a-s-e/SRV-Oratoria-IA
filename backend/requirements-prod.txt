@@ -19,6 +19,13 @@ faster-whisper==1.2.1
 praat-parselmouth==0.4.5
 ctranslate2==4.7.1
 
+# ── Dimensión 2: Claridad y Coherencia ────────────────────────────────────────
+spacy==3.8.7                # NLP español: lematización, muletillas, TTR
+transformers==4.46.3        # BETO para coherencia semántica
+torch==2.6.0                # backend de transformers (usar versión CPU en prod)
+# Tras instalar, descargar el modelo spaCy:
+#   python -m spacy download es_core_news_sm
+
 # ── Audio utils ────────────────────────────────────────────────────────────────
 av==17.0.1
 numpy==2.4.4

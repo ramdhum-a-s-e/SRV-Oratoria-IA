@@ -27,8 +27,10 @@ def generate_feedback(ppm_result: dict, pauses_result: dict) -> dict:
     long_pauses = pauses_result.get("long_pauses", 0)
     total_pauses = pauses_result.get("total_pauses", 0)
 
-    pts = _puntaje_ppm(ppm) + _puntaje_pausas(long_pauses)
-    estrellas = max(1, min(5, pts))
+    ppm_pts    = _puntaje_ppm(ppm)
+    pausas_pts = _puntaje_pausas(long_pauses)
+    pts        = ppm_pts + pausas_pts
+    estrellas  = max(1, min(5, pts))
 
     # Mensaje principal segun velocidad
     if ppm < PPM_MUY_LENTO:
@@ -71,6 +73,8 @@ def generate_feedback(ppm_result: dict, pauses_result: dict) -> dict:
 
     consejos = [c for c in [consejo_velocidad, consejo_pausas] if c]
 
+    score_d1 = round((pts / 5.0) * 100, 1)
+
     return {
         "estrellas": estrellas,
         "color": color,
@@ -78,4 +82,8 @@ def generate_feedback(ppm_result: dict, pauses_result: dict) -> dict:
         "detalle_velocidad": msg_velocidad,
         "detalle_pausas": msg_pausas,
         "consejos": consejos,
+        "score_d1": score_d1,
+        # internos para scoring global (no se muestran en frontend)
+        "_ppm_pts": ppm_pts,
+        "_pausas_pts": pausas_pts,
     }

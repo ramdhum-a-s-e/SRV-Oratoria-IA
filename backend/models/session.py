@@ -23,6 +23,8 @@ class Sesion(Base):
     texto_id    = Column(Integer, ForeignKey("textos_lectura.id"), nullable=True)
     created_at  = Column(DateTime, default=datetime.utcnow)
 
-    usuario  = relationship("Usuario", back_populates="sesiones")
-    resultado = relationship("ResultadoD1", back_populates="sesion", uselist=False)
-    texto    = relationship("TextoLectura")
+    usuario      = relationship("Usuario",     back_populates="sesiones")
+    resultado_d1 = relationship("ResultadoD1", back_populates="sesion", uselist=False)
+    resultado_d2 = relationship("ResultadoD2", back_populates="sesion", uselist=False)
+    resultado_d3 = relationship("ResultadoD3", back_populates="sesion", uselist=False)
+    texto        = relationship("TextoLectura")
