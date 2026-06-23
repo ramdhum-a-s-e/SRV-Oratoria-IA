@@ -163,23 +163,22 @@ function SeccionD1({ data }) {
       <p style={{ margin: '0 0 4px', fontSize: '12px', fontWeight: 'bold', color: C.text }}>Velocidad de habla</p>
       <BarraVelocidad ppm={data.ppm.ppm} />
       <Fila label="Palabras por minuto" valor={`${data.ppm.ppm} PPM`} color={data.ppm.ppm >= 80 && data.ppm.ppm <= 120 ? C.green : C.yellow} />
-      <Fila label="Palabras detectadas"  valor={data.ppm.word_count} />
-      <Fila label="Tiempo hablando"      valor={`${data.ppm.speech_duration_s}s`} />
       <p style={{ margin: '8px 0 14px', color: C.muted, fontSize: '13px' }}>{fb.detalle_velocidad}</p>
 
-      {/* Bloqueos y pausas */}
-      <p style={{ margin: '0 0 6px', fontSize: '12px', fontWeight: 'bold', color: C.text }}>Bloqueos y pausas</p>
+      {/* Bloqueos */}
+      <p style={{ margin: '0 0 6px', fontSize: '12px', fontWeight: 'bold', color: C.text }}>Bloqueos</p>
       <div style={{ display: 'flex', gap: '20px', margin: '4px 0 10px' }}>
         <div style={{ textAlign: 'center' }}>
           <p style={{ fontSize: '40px', fontWeight: 'bold', margin: 0, color: data.pausas.long_pauses === 0 ? C.green : C.red }}>{data.pausas.long_pauses}</p>
           <p style={{ fontSize: '11px', color: C.muted, margin: 0 }}>bloqueos</p>
         </div>
-        <div style={{ textAlign: 'center' }}>
-          <p style={{ fontSize: '40px', fontWeight: 'bold', margin: 0, color: C.text }}>{data.pausas.total_pauses}</p>
-          <p style={{ fontSize: '11px', color: C.muted, margin: 0 }}>pausas cortas</p>
-        </div>
       </div>
-      <p style={{ margin: 0, color: C.muted, fontSize: '13px' }}>{fb.detalle_pausas}</p>
+      <p style={{ margin: '0 0 14px', color: C.muted, fontSize: '13px' }}>{fb.detalle_pausas}</p>
+
+      {/* Volumen */}
+      <p style={{ margin: '0 0 4px', fontSize: '12px', fontWeight: 'bold', color: C.text }}>Volumen</p>
+      <Fila label="Volumen de voz" valor={data.prosodia?.intensity_mean_db != null ? `${data.prosodia.intensity_mean_db} dB` : 'N/A'} />
+      {data.d3?.detalle_volumen && <p style={{ margin: '8px 0 0', color: C.muted, fontSize: '13px' }}>{data.d3.detalle_volumen}</p>}
 
       <DatosTecnicos rows={tecnico} accentColor={C.blue} />
     </Tarjeta>
@@ -210,7 +209,7 @@ function SeccionD2({ d2 }) {
         {[
           ['Muletillas', d2.muletillas_count, '', colMul],
           ['Variedad',   `${Math.round(d2.ttr_score * 100)}%`, 'TTR', colTTR],
-          ['Coherencia', `${Math.round(d2.coherencia_score * 100)}%`, '', colCoh],
+          ['Coherencia', d2.coherencia_nivel || '—', '', colCoh],
         ].map(([lbl, val, sub, col]) => (
           <div key={lbl} style={{ flex: 1, textAlign: 'center', backgroundColor: 'rgba(167,139,250,0.08)', borderRadius: '8px', padding: '10px 4px' }}>
             <p style={{ fontSize: '26px', fontWeight: 'bold', margin: 0, color: col }}>{val}</p>
@@ -252,7 +251,6 @@ function SeccionD3({ d3, prosodia }) {
         {[
           ['Variacion tono', d3.breakdown.variacion_tonal_pts, 40, C.orange],
           ['Calidad voz',    d3.breakdown.calidad_hnr_pts,     30, C.yellow],
-          ['Volumen',        d3.breakdown.volumen_pts,         30, C.green],
         ].map(([lbl, val, max, col]) => (
           <div key={lbl} style={{ flex: 1, textAlign: 'center', backgroundColor: 'rgba(251,146,60,0.08)', borderRadius: '8px', padding: '10px 4px' }}>
             <p style={{ fontSize: '24px', fontWeight: 'bold', margin: 0, color: col }}>{val}</p>
@@ -264,7 +262,6 @@ function SeccionD3({ d3, prosodia }) {
       <ScoreBar score={d3.score_d3} color={C.orange} />
       <p style={{ margin: '4px 0', color: C.muted, fontSize: '12px' }}>{d3.detalle_tono}</p>
       <p style={{ margin: '4px 0', color: C.muted, fontSize: '12px' }}>{d3.detalle_calidad}</p>
-      <p style={{ margin: '4px 0', color: C.muted, fontSize: '12px' }}>{d3.detalle_volumen}</p>
       <DatosTecnicos rows={tecnico} accentColor={C.orange} />
     </Tarjeta>
   )
