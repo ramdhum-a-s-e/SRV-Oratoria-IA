@@ -1,3 +1,6 @@
+# Índice de PyTorch CPU-only (evita arrastrar ~2.7 GB de librerías CUDA inútiles en prod)
+--extra-index-url https://download.pytorch.org/whl/cpu
+
 # ── Core API ──────────────────────────────────────────────────────────────────
 fastapi==0.136.1
 uvicorn==0.46.0
@@ -22,7 +25,7 @@ ctranslate2==4.7.1
 # ── Dimensión 2: Claridad y Coherencia ────────────────────────────────────────
 spacy==3.8.7                # NLP español: lematización, muletillas, TTR
 transformers==4.46.3        # BETO para coherencia semántica
-torch==2.6.0                # backend de transformers (usar versión CPU en prod)
+torch==2.6.0+cpu            # backend de transformers (CPU-only, sin CUDA)
 # Tras instalar, descargar el modelo spaCy:
 #   python -m spacy download es_core_news_sm
 
