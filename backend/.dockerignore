@@ -1,0 +1,28 @@
+# Evita copiar archivos sensibles o innecesarios a la imagen del contenedor.
+# Defensa en profundidad: aunque el deploy se construye desde git (sin .env),
+# esto protege también builds locales / `railway up`.
+
+# Secretos y entorno local
+.env
+.env.*
+!.env.example
+
+# Entornos virtuales y caches de Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# Bases de datos locales de desarrollo
+*.db
+srv_dev.db
+
+# Control de versiones y metadatos
+.git/
+.gitignore
+
+# Documentos / binarios que no necesita el runtime
+*.docx
+*.pdf
