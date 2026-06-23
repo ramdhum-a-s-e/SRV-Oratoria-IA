@@ -16,20 +16,20 @@ def test_register_ok(client):
 
 
 def test_register_username_duplicado(client):
-    payload = {"nombre": "A", "apellido": "B", "username": "dup", "password": "clave12345"}
+    payload = {"nombre": "Ana", "apellido": "Lopez", "username": "dup", "password": "clave12345"}
     assert client.post("/auth/register", json=payload).status_code == 201
     assert client.post("/auth/register", json=payload).status_code == 400
 
 
 def test_login_ok(client):
-    client.post("/auth/register", json={"nombre": "A", "apellido": "B", "username": "log1", "password": "clave12345"})
+    client.post("/auth/register", json={"nombre": "Ana", "apellido": "Lopez", "username": "log1", "password": "clave12345"})
     r = client.post("/auth/login", json={"username": "log1", "password": "clave12345"})
     assert r.status_code == 200
     assert "access_token" in r.json()
 
 
 def test_login_password_incorrecta(client):
-    client.post("/auth/register", json={"nombre": "A", "apellido": "B", "username": "log2", "password": "clave12345"})
+    client.post("/auth/register", json={"nombre": "Ana", "apellido": "Lopez", "username": "log2", "password": "clave12345"})
     r = client.post("/auth/login", json={"username": "log2", "password": "incorrecta"})
     assert r.status_code == 401
 

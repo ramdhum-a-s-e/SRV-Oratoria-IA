@@ -17,6 +17,26 @@ function Campo({ label, type = 'text', value, onChange, placeholder }) {
   )
 }
 
+function validar(modo, form) {
+  const soloLetras = /^[A-Za-zÁÉÍÓÚáéíóúÑñÜü ]+$/
+  const userOk     = /^[A-Za-z0-9._]+$/
+  if (modo === 'register') {
+    const nombre   = form.nombre.trim()
+    const apellido = form.apellido.trim()
+    if (nombre.length < 2 || nombre.length > 50) return 'El nombre debe tener entre 2 y 50 caracteres.'
+    if (!soloLetras.test(nombre))   return 'El nombre solo puede contener letras (sin numeros).'
+    if (apellido.length < 2 || apellido.length > 50) return 'El apellido debe tener entre 2 y 50 caracteres.'
+    if (!soloLetras.test(apellido)) return 'El apellido solo puede contener letras (sin numeros).'
+    if (form.grado.trim()   && !/^[A-Za-z0-9°º]{1,10}$/.test(form.grado.trim()))  return 'Grado invalido (ej. 1ro).'
+    if (form.seccion.trim() && !/^[A-Za-z]{1,2}$/.test(form.seccion.trim()))      return 'Seccion invalida (1 o 2 letras, ej. A).'
+  }
+  const u = form.username.trim()
+  if (u.length < 3 || u.length > 30) return 'El usuario debe tener entre 3 y 30 caracteres.'
+  if (!userOk.test(u))               return 'El usuario solo puede contener letras, numeros, punto y guion bajo.'
+  if (form.password.length < 6)      return 'La contrasena debe tener al menos 6 caracteres.'
+  return null
+}
+
 export default function Login() {
   const { login } = useAuth()
   const navigate = useNavigate()
@@ -29,17 +49,27 @@ export default function Login() {
 
   const submit = async e => {
     e.preventDefault()
+    const fallo = validar(modo, form)
+    if (fallo) { setError(fallo); return }
     setCargando(true); setError('')
     try {
       const url = modo === 'login' ? '/auth/login' : '/auth/register'
       const body = modo === 'login'
-        ? { username: form.username, password: form.password }
-        : form
+        ? { username: form.username.trim(), password: form.password }
+        : {
+            nombre: form.nombre.trim(), apellido: form.apellido.trim(),
+            username: form.username.trim(), password: form.password,
+            grado: form.grado.trim() || null, seccion: form.seccion.trim() || null,
+          }
       const res = await api.post(url, body)
       login(res.data.access_token, res.data.user)
       navigate('/modos')
     } catch (err) {
-      setError(err.response?.data?.detail || 'Error al conectar con el servidor')
+      const detail = err.response?.data?.detail
+      const msg = Array.isArray(detail)
+        ? detail.map(d => (d.msg || '').replace(/^Value error,?\s*/i, '')).join(' ')
+        : detail
+      setError(msg || 'Error al conectar con el servidor')
     } finally {
       setCargando(false)
     }
