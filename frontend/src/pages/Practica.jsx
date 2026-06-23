@@ -273,6 +273,17 @@ function Resultados({ data }) {
   return (
     <div style={{ maxWidth: '680px', margin: '18px auto', textAlign: 'center' }}>
       <ScoreGlobal data={data} />
+      {data.lectura && (
+        <Tarjeta titulo="Modo lectura — Fidelidad" accentColor={data.lectura.fidelidad_score >= 70 ? C.green : data.lectura.fidelidad_score >= 50 ? C.yellow : C.red}>
+          <div style={{ textAlign: 'center', margin: '4px 0 8px' }}>
+            <p style={{ fontSize: '44px', fontWeight: 'bold', margin: 0, lineHeight: 1, color: data.lectura.fidelidad_score >= 70 ? C.green : data.lectura.fidelidad_score >= 50 ? C.yellow : C.red }}>{data.lectura.fidelidad_score}%</p>
+            <p style={{ fontSize: '11px', color: C.muted, margin: '2px 0 0' }}>coincidencia con el texto</p>
+          </div>
+          <p style={{ margin: '4px 0 8px', color: C.muted, fontSize: '13px' }}>{data.lectura.mensaje}</p>
+          <Fila label="Palabras del texto" valor={data.lectura.palabras_texto} />
+          <Fila label="Palabras leidas"  valor={data.lectura.palabras_leidas} />
+        </Tarjeta>
+      )}
       <SeccionD1 data={data} />
       <SeccionD2 d2={data.d2} />
       <SeccionD3 d3={data.d3} prosodia={data.prosodia} />

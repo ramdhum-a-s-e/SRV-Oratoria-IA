@@ -11,7 +11,7 @@ from models.metrics import ResultadoD1, ResultadoD2, ResultadoD3
 from utils.auth import get_current_user
 from utils.audio import to_wav
 from services.audio_processor import get_model_final
-from services.dimension1 import transcribe, calculate_ppm, detect_pauses, analyze_prosody, generate_feedback
+from services.dimension1 import transcribe, calculate_ppm, detect_pauses, analyze_prosody, generate_feedback, calc_fidelidad_lectura
 from services.dimension2 import detect_muletillas, calc_ttr, calc_coherencia, generate_feedback_d2
 from services.dimension3 import calc_expresividad
 from services.scoring import calc_score_global
@@ -59,6 +59,13 @@ async def analizar_fluidez(
     # ── D1 ────────────────────────────────────────────────────────────────────
     feedback_d1 = generate_feedback(ppm_result, pauses_result)
 
+    # ── Modo Lectura: fidelidad vs texto original (HU-28) ───────────────────────
+    lectura_result = None
+    if modo == "lectura" and texto_id is not None:
+        texto_obj = db.query(TextoLectura).filter(TextoLectura.id == texto_id).first()
+        if texto_obj:
+            lectura_result = calc_fidelidad_lectura(transcript, texto_obj.contenido)
+
     # ── D2 ────────────────────────────────────────────────────────────────────
     muletillas_result = detect_muletillas(transcript)
     ttr_result        = calc_ttr(transcript)
@@ -81,6 +88,9 @@ async def analizar_fluidez(
     db.flush()
 
     p = prosody_result or {}
+    fb_d1_json = {k: v for k, v in feedback_d1.items() if not k.startswith("_")}
+    if lectura_result:
+        fb_d1_json["lectura"] = lectura_result
     resultado_d1 = ResultadoD1(
         sesion_id         = sesion.id,
         transcripcion     = transcript,
@@ -98,7 +108,7 @@ async def analizar_fluidez(
         intensity_mean_db = p.get("intensity_mean_db"),
         estrellas         = feedback_d1["estrellas"],
         score_d1          = feedback_d1.get("score_d1"),
-        feedback_json     = {k: v for k, v in feedback_d1.items() if not k.startswith("_")},
+        feedback_json     = fb_d1_json,
     )
     resultado_d2 = ResultadoD2(
         sesion_id        = sesion.id,
@@ -132,6 +142,7 @@ async def analizar_fluidez(
         "pausas": {k: v for k, v in pauses_result.items() if k != "pauses"},
         "prosodia": prosody_result,
         "retroalimentacion": {k: v for k, v in feedback_d1.items() if not k.startswith("_")},
+        "lectura": lectura_result,
         "d2": {
             **muletillas_result,
             "ttr_score":       ttr_result["ttr_score"],
