@@ -35,4 +35,4 @@ python-dotenv==1.1.0
 huggingface_hub>=0.23
 loguru==0.7.3
 reportlab==4.2.5          # Generación de reportes PDF de desempeño
-anthropic>=0.40           # HU-25: consejos con IA generativa (Claude Haiku); opcional
+anthropic==0.111.0        # HU-25: consejos con IA generativa (Claude Haiku); opcional
