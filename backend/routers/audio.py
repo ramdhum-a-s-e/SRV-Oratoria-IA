@@ -10,6 +10,7 @@ from models.session import Sesion, TextoLectura
 from models.metrics import ResultadoD1, ResultadoD2, ResultadoD3
 from utils.auth import get_current_user
 from utils.audio import to_wav
+from utils.audio_storage import persist_audio
 from services.audio_processor import get_model_final
 from services.dimension1 import transcribe, calculate_ppm, detect_pauses, analyze_prosody, generate_feedback, calc_fidelidad_lectura
 from services.dimension2 import detect_muletillas, calc_ttr, calc_coherencia, generate_feedback_d2
@@ -44,6 +45,7 @@ async def analizar_fluidez(
     with open(raw_path, "wb") as f:
         f.write(await file.read())
 
+    audio_path = None
     try:
         to_wav(raw_path, wav_path)
         model = get_model_final()
@@ -51,6 +53,8 @@ async def analizar_fluidez(
         ppm_result     = calculate_ppm(words)
         pauses_result  = detect_pauses(words)
         prosody_result = analyze_prosody(wav_path)
+        # Persistencia opcional del audio (desactivada por defecto; ver config).
+        audio_path = persist_audio(wav_path, uid)
     finally:
         for path in (raw_path, wav_path):
             if os.path.exists(path):
@@ -91,6 +95,8 @@ async def analizar_fluidez(
     fb_d1_json = {k: v for k, v in feedback_d1.items() if not k.startswith("_")}
     if lectura_result:
         fb_d1_json["lectura"] = lectura_result
+    if audio_path:
+        fb_d1_json["audio_path"] = audio_path
     resultado_d1 = ResultadoD1(
         sesion_id         = sesion.id,
         transcripcion     = transcript,

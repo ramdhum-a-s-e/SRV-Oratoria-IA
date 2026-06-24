@@ -15,6 +15,14 @@ WHISPER_MODEL_FINAL  = os.getenv("WHISPER_MODEL_FINAL", "medium")  # plan Hobby 
 # Filtros anti-ruido del aula rural (paso-alto + puerta de ruido). Charter S04.
 AUDIO_FILTERS_ENABLED = os.getenv("AUDIO_FILTERS_ENABLED", "1") not in ("0", "false", "False")
 
+# Persistencia del .wav en Supabase Storage (Charter S04). DESACTIVADA por defecto:
+# por ética/legalidad (voz de menores) y por límites del plan free. La lógica existe
+# y se activa con AUDIO_PERSIST_ENABLED=1 + credenciales de servicio.
+AUDIO_PERSIST_ENABLED = os.getenv("AUDIO_PERSIST_ENABLED", "0") in ("1", "true", "True")
+SUPABASE_URL          = os.getenv("SUPABASE_URL", "")
+SUPABASE_SERVICE_KEY  = os.getenv("SUPABASE_SERVICE_KEY", "")
+SUPABASE_AUDIO_BUCKET = os.getenv("SUPABASE_AUDIO_BUCKET", "audios")
+
 # ── Base de datos ─────────────────────────────────────────────────────────────
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./srv_dev.db")
 
