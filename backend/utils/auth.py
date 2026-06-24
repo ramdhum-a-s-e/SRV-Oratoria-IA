@@ -35,3 +35,10 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Usuario no encontrado")
     return user
+
+
+def require_docente(current_user=Depends(get_current_user)):
+    """Guarda RBAC: solo permite el acceso a usuarios con rol 'docente'."""
+    if current_user.rol != "docente":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Solo para docentes")
+    return current_user

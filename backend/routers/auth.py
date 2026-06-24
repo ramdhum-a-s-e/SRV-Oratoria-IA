@@ -18,6 +18,7 @@ def register(body: RegisterRequest, db: Session = Depends(get_db)):
         apellido=body.apellido,
         username=body.username,
         password_hash=hash_password(body.password),
+        rol=body.rol or "alumno",
         grado=body.grado,
         seccion=body.seccion,
     )

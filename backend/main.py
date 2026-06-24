@@ -15,6 +15,24 @@ from routers import auth, audio, metrics
 setup_logging()
 Base.metadata.create_all(bind=engine)
 
+
+def ensure_schema():
+    """Micro-migración sin Alembic: añade columnas nuevas a tablas ya existentes.
+    create_all() solo crea tablas faltantes, no altera las existentes."""
+    from sqlalchemy import inspect, text
+    try:
+        insp = inspect(engine)
+        cols = [c["name"] for c in insp.get_columns("usuarios")]
+        if "rol" not in cols:
+            with engine.begin() as conn:
+                conn.execute(text("ALTER TABLE usuarios ADD COLUMN rol VARCHAR(20) DEFAULT 'alumno'"))
+            logger.info("Columna 'rol' añadida a la tabla usuarios")
+    except Exception as e:
+        logger.warning(f"ensure_schema: {e}")
+
+
+ensure_schema()
+
 app = FastAPI(
     title="SRV — Sistema de Retroalimentacion por Voz",
     description="API para analisis de fluidez oral con IA (UPAO Taller Integrador 1)",

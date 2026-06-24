@@ -29,7 +29,7 @@ export default function Login() {
   const { login } = useAuth()
   const navigate = useNavigate()
   const [modo, setModo] = useState('login')
-  const [form, setForm] = useState({ nombre: '', apellido: '', username: '', password: '', grado: '', seccion: '' })
+  const [form, setForm] = useState({ nombre: '', apellido: '', username: '', password: '', grado: '', seccion: '', rol: 'alumno' })
   const [error, setError] = useState('')
   const [cargando, setCargando] = useState(false)
 
@@ -46,12 +46,12 @@ export default function Login() {
         ? { username: form.username.trim(), password: form.password }
         : {
             nombre: form.nombre.trim(), apellido: form.apellido.trim(),
-            username: form.username.trim(), password: form.password,
+            username: form.username.trim(), password: form.password, rol: form.rol,
             grado: form.grado.trim() || null, seccion: form.seccion.trim() || null,
           }
       const res = await api.post(url, body)
       login(res.data.access_token, res.data.user)
-      navigate('/modos')
+      navigate(res.data.user.rol === 'docente' ? '/docente' : '/modos')
     } catch (err) {
       const detail = err.response?.data?.detail
       const msg = Array.isArray(detail)
@@ -87,14 +87,32 @@ export default function Login() {
         <form onSubmit={submit}>
           {modo === 'register' && (
             <>
+              <div style={{ marginBottom: 14 }}>
+                <label style={{ display: 'block', fontWeight: 700, fontSize: 14, color: T.suave, marginBottom: 6 }}>¿Quién eres?</label>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  {[['alumno', '👦 Soy alumno'], ['docente', '🧑‍🏫 Soy docente']].map(([r, txt]) => (
+                    <button type="button" key={r} onClick={() => set('rol')(r)}
+                      style={{
+                        flex: 1, padding: '12px', borderRadius: 14, cursor: 'pointer', fontWeight: 800, fontSize: 14,
+                        border: `2px solid ${form.rol === r ? T.verde : T.borde}`,
+                        background: form.rol === r ? '#eafaf1' : '#fff',
+                        color: form.rol === r ? T.verdeD : T.suave,
+                      }}>
+                      {txt}
+                    </button>
+                  ))}
+                </div>
+              </div>
               <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                 <div style={{ flex: '1 1 140px' }}><Campo label="Nombre" value={form.nombre} onChange={set('nombre')} placeholder="Ana" /></div>
                 <div style={{ flex: '1 1 140px' }}><Campo label="Apellido" value={form.apellido} onChange={set('apellido')} placeholder="Lopez" /></div>
               </div>
-              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                <div style={{ flex: '1 1 100px' }}><Campo label="Grado" value={form.grado} onChange={set('grado')} placeholder="1ro" /></div>
-                <div style={{ flex: '1 1 100px' }}><Campo label="Seccion" value={form.seccion} onChange={set('seccion')} placeholder="A" /></div>
-              </div>
+              {form.rol === 'alumno' && (
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                  <div style={{ flex: '1 1 100px' }}><Campo label="Grado" value={form.grado} onChange={set('grado')} placeholder="1ro" /></div>
+                  <div style={{ flex: '1 1 100px' }}><Campo label="Seccion" value={form.seccion} onChange={set('seccion')} placeholder="A" /></div>
+                </div>
+              )}
             </>
           )}
           <Campo label="Usuario" value={form.username} onChange={set('username')} placeholder="mi.usuario" />

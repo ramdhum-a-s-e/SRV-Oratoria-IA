@@ -13,8 +13,17 @@ class RegisterRequest(BaseModel):
     apellido: str
     username: str
     password: str
+    rol: Optional[str] = "alumno"
     grado: Optional[str] = None
     seccion: Optional[str] = None
+
+    @field_validator("rol")
+    @classmethod
+    def _valida_rol(cls, v: Optional[str]) -> str:
+        v = (v or "alumno").strip().lower()
+        if v not in ("alumno", "docente"):
+            raise ValueError("Rol invalido.")
+        return v
 
     @field_validator("nombre", "apellido")
     @classmethod
