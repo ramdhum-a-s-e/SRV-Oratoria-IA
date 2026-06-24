@@ -353,6 +353,17 @@ export default function Practica() {
     }
   }
 
+  const descargarPDF = async (id) => {
+    try {
+      const res = await api.get(`/metrics/reporte/${id}`, { responseType: 'blob' })
+      const url = URL.createObjectURL(res.data)
+      const a = document.createElement('a')
+      a.href = url; a.download = `reporte_sesion_${id}.pdf`
+      document.body.appendChild(a); a.click(); a.remove()
+      URL.revokeObjectURL(url)
+    } catch { setError('No se pudo descargar el PDF.') }
+  }
+
   const btnColor = analizando ? T.suave : grabando ? T.coral : T.verde
 
   return (
@@ -401,10 +412,16 @@ export default function Practica() {
 
         {resultado  && <Resultados data={resultado} />}
         {resultado  && (
-          <button onClick={() => navigate('/historial')}
-            style={{ marginTop: 14, padding: '12px 26px', borderRadius: 999, border: `2px solid ${T.borde}`, background: '#fff', color: T.suave, cursor: 'pointer', fontSize: 14, fontWeight: 700 }}>
-            📊 Ver mi historial →
-          </button>
+          <div style={{ marginTop: 14, display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <button onClick={() => descargarPDF(resultado.sesion_id)}
+              style={{ padding: '12px 26px', borderRadius: 999, border: 'none', background: T.coral, color: '#fff', cursor: 'pointer', fontSize: 14, fontWeight: 800, fontFamily: "'Baloo 2', sans-serif", boxShadow: '0 4px 0 rgba(0,0,0,0.15)' }}>
+              📄 Descargar PDF
+            </button>
+            <button onClick={() => navigate('/historial')}
+              style={{ padding: '12px 26px', borderRadius: 999, border: `2px solid ${T.borde}`, background: '#fff', color: T.suave, cursor: 'pointer', fontSize: 14, fontWeight: 700 }}>
+              📊 Ver mi historial →
+            </button>
+          </div>
         )}
       </div>
     </div>

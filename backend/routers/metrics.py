@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import Response
 from sqlalchemy.orm import Session
 from database import get_db
 from models.user import Usuario
@@ -70,3 +71,38 @@ def detalle_sesion(
         "d2": d2.feedback_json if d2 else None,
         "d3": d3.feedback_json if d3 else None,
     }
+
+
+@router.get("/reporte/{sesion_id}")
+def reporte_pdf(
+    sesion_id: int,
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Genera y descarga el reporte PDF de una sesión. El docente puede ver cualquiera;
+    el alumno solo las suyas."""
+    sesion = db.query(Sesion).filter(Sesion.id == sesion_id).first()
+    if not sesion:
+        raise HTTPException(status_code=404, detail="Sesion no encontrada")
+    if current_user.rol != "docente" and sesion.usuario_id != current_user.id:
+        raise HTTPException(status_code=403, detail="No autorizado")
+
+    d1, d2, d3 = sesion.resultado_d1, sesion.resultado_d2, sesion.resultado_d3
+    usuario = sesion.usuario
+
+    score_global = None
+    if d1 and d2 and d3:
+        from services.scoring import calc_score_global
+        score_global = calc_score_global(
+            score_d1=d1.score_d1 or 0.0,
+            score_d2=d2.score_d2 or 0.0,
+            score_d3=d3.score_d3 or 0.0,
+        )["score_global"]
+
+    from services.report_pdf import build_session_report
+    pdf = build_session_report(sesion, d1, d2, d3, usuario, score_global)
+    return Response(
+        content=pdf,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="reporte_sesion_{sesion_id}.pdf"'},
+    )

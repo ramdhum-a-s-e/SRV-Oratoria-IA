@@ -37,3 +37,4 @@ numpy==2.4.4
 python-dotenv==1.1.0
 huggingface_hub==0.34.4   # <1.0 por compatibilidad con transformers
 loguru==0.7.3             # logging estructurado + manejo global de errores
+reportlab==4.2.5          # Generación de reportes PDF de desempeño

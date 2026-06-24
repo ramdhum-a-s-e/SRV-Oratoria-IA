@@ -158,6 +158,17 @@ export default function Historial() {
       .finally(() => setCargando(false))
   }, [])
 
+  const descargarPDF = async (id) => {
+    try {
+      const res = await api.get(`/metrics/reporte/${id}`, { responseType: 'blob' })
+      const url = URL.createObjectURL(res.data)
+      const a = document.createElement('a')
+      a.href = url; a.download = `reporte_sesion_${id}.pdf`
+      document.body.appendChild(a); a.click(); a.remove()
+      URL.revokeObjectURL(url)
+    } catch { /* noop */ }
+  }
+
   const conScore     = sesiones.filter(s => s.score_global != null)
   const promEstrellas = sesiones.length
     ? (sesiones.reduce((a, s) => a + (s.estrellas || 0), 0) / sesiones.length).toFixed(1) : '-'
@@ -234,6 +245,10 @@ export default function Historial() {
                       ) : null
                     )}
                   </div>
+                  <button onClick={() => descargarPDF(s.id)}
+                    style={{ marginTop: 10, padding: '6px 12px', borderRadius: 999, border: `2px solid ${T.coral}`, background: '#fff', color: T.coral, cursor: 'pointer', fontSize: 11, fontWeight: 700 }}>
+                    📄 PDF
+                  </button>
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   {s.score_global != null && (
