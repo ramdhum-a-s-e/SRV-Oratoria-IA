@@ -13,11 +13,37 @@ const THEME = {
   red:    { bg: '#fdecec', border: T.coral,   text: T.err },
 }
 
+// Elige la voz en español más natural disponible (evita la robótica por defecto)
+let _vozPref = null
+function elegirVoz() {
+  if (!window.speechSynthesis) return null
+  const voces = window.speechSynthesis.getVoices()
+  if (!voces.length) return null
+  const es = voces.filter(v => (v.lang || '').toLowerCase().startsWith('es'))
+  if (!es.length) return null
+  // Preferencia por voces más naturales/cálidas (varían según el dispositivo)
+  const preferidas = ['Google español', 'Paulina', 'Mónica', 'Microsoft Sabina',
+                      'Microsoft Helena', 'Sabina', 'Helena', 'Laura']
+  for (const nombre of preferidas) {
+    const v = es.find(v => v.name.includes(nombre))
+    if (v) return v
+  }
+  return es.find(v => /google|natural|online|neural/i.test(v.name)) || es[0]
+}
+
+if (typeof window !== 'undefined' && window.speechSynthesis) {
+  window.speechSynthesis.onvoiceschanged = () => { _vozPref = elegirVoz() }
+}
+
 function hablar(texto) {
   if (!window.speechSynthesis) return
   window.speechSynthesis.cancel()
   const u = new SpeechSynthesisUtterance(texto)
-  u.lang = 'es-PE'; u.rate = 0.9
+  u.lang = 'es-PE'
+  u.rate = 0.95   // ritmo natural para niños
+  u.pitch = 1.15  // un poco más agudo = más amigable
+  const voz = _vozPref || (_vozPref = elegirVoz())
+  if (voz) u.voice = voz
   window.speechSynthesis.speak(u)
 }
 
@@ -339,7 +365,8 @@ export default function Practica() {
         await record.startRecording()
         wavesurferRef.current = ws; recordRef.current = record
         setGrabando(true)
-        hablar('Puedes empezar a hablar')
+        // No se reproduce voz aquí: el micrófono la captaría y contaminaría la grabación.
+        // La señal de "grabando" es visual (banner pulsante).
       } catch { setError('No se pudo acceder al microfono.') }
     } else {
       setGrabando(false)
@@ -405,7 +432,14 @@ export default function Practica() {
 
         {!resultado && <Lorito size={72} mensaje={grabando ? '¡Te escucho! 👂' : analizando ? 'Pensando…' : '¡Cuando quieras, empieza!'} />}
 
-        <div ref={containerRef} style={{ margin: '0 auto 18px', width: '100%', minHeight: 80, border: `2px solid ${T.borde}`, borderRadius: 18, overflow: 'hidden', background: '#fff' }} />
+        {grabando && (
+          <div className="pulso" style={{ background: '#fdecec', border: `2.5px solid ${T.coral}`, borderRadius: 18, padding: '14px 18px', marginBottom: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+            <span style={{ width: 16, height: 16, borderRadius: '50%', background: T.coral, display: 'inline-block' }} />
+            <span style={{ color: T.err, fontWeight: 800, fontSize: 'clamp(16px,4.5vw,20px)', fontFamily: "'Baloo 2', sans-serif" }}>¡GRABANDO! Habla ahora 🎤</span>
+          </div>
+        )}
+
+        <div ref={containerRef} style={{ margin: '0 auto 18px', width: '100%', minHeight: 80, border: `2px solid ${grabando ? T.coral : T.borde}`, borderRadius: 18, overflow: 'hidden', background: '#fff' }} />
 
         <button onClick={manejarGrabacion} disabled={analizando}
           style={{ padding: '16px 44px', fontSize: 18, fontWeight: 800, borderRadius: 999, border: 'none',
@@ -415,7 +449,7 @@ export default function Practica() {
           {analizando ? '⏳ Analizando…' : grabando ? '⏹  Listo, analizar' : '🎤  Empezar a hablar'}
         </button>
 
-        {grabando   && <p style={{ color: T.coral,  marginTop: 12, fontSize: 14, fontWeight: 700 }}>● Grabando… cuando termines presiona el botón</p>}
+        {grabando   && <p style={{ color: T.suave,  marginTop: 12, fontSize: 14, fontWeight: 700 }}>Cuando termines de hablar, presiona el botón otra vez 👆</p>}
         {analizando && <p style={{ color: T.suave, marginTop: 14, fontSize: 14 }}>Procesando tu voz con la IA, espera un momentito…</p>}
         {error      && <div style={{ marginTop: 14, background: '#fdecec', border: `2px solid ${T.coral}`, borderRadius: 14, padding: 14, color: T.err, fontSize: 14, fontWeight: 700 }}>{error}</div>}
 

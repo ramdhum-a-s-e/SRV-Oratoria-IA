@@ -59,6 +59,9 @@ input, button, textarea { font-size: 1rem; }
 @keyframes pop { 0% { transform: scale(0.6); opacity: 0; } 70% { transform: scale(1.1); } 100% { transform: scale(1); opacity: 1; } }
 .pop { animation: pop 0.4s ease-out both; }
 
+@keyframes pulso { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.55; transform: scale(1.06); } }
+.pulso { animation: pulso 1s ease-in-out infinite; }
+
 @media (prefers-reduced-motion: reduce) {
-  .flotar, .aparecer, .pop { animation: none; }
+  .flotar, .aparecer, .pop, .pulso { animation: none; }
 }
