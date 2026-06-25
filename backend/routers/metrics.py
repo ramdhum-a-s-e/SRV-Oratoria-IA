@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import Response
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from database import get_db
 from models.user import Usuario
@@ -54,28 +55,45 @@ def historial(current_user: Usuario = Depends(get_current_user), db: Session = D
 
 @router.get("/docente/alumnos")
 def docente_alumnos(current_user: Usuario = Depends(require_docente), db: Session = Depends(get_db)):
-    """Lista de alumnos con su resumen (nº prácticas, promedio global, última práctica)."""
-    alumnos = (
-        db.query(Usuario)
+    """Lista de alumnos con su resumen (nº prácticas, promedio global, última práctica).
+
+    Optimizado: una sola consulta agregada (JOIN + GROUP BY) calcula el conteo, el promedio
+    del puntaje global y la última práctica directamente en la base de datos, evitando el
+    problema N+1 (cientos de consultas) que hacía lento el panel del docente.
+    """
+    # Puntaje global por sesión (mismos pesos que calc_score_global). Si falta alguna
+    # dimensión, la expresión es NULL y AVG la ignora automáticamente.
+    gscore = (0.40 * ResultadoD1.score_d1 + 0.35 * ResultadoD2.score_d2 + 0.25 * ResultadoD3.score_d3)
+
+    filas = (
+        db.query(
+            Usuario.id, Usuario.nombre, Usuario.apellido, Usuario.grado, Usuario.seccion,
+            func.count(Sesion.id).label("practicas"),
+            func.avg(gscore).label("promedio"),
+            func.max(Sesion.created_at).label("ultima"),
+        )
+        .outerjoin(Sesion, Sesion.usuario_id == Usuario.id)
+        .outerjoin(ResultadoD1, ResultadoD1.sesion_id == Sesion.id)
+        .outerjoin(ResultadoD2, ResultadoD2.sesion_id == Sesion.id)
+        .outerjoin(ResultadoD3, ResultadoD3.sesion_id == Sesion.id)
         .filter(Usuario.rol == "alumno")
+        .group_by(Usuario.id, Usuario.nombre, Usuario.apellido, Usuario.grado, Usuario.seccion)
         .order_by(Usuario.apellido, Usuario.nombre)
         .all()
     )
-    out = []
-    for a in alumnos:
-        sesiones = db.query(Sesion).filter(Sesion.usuario_id == a.id).all()
-        scores = [g for g in (_score_global(s.resultado_d1, s.resultado_d2, s.resultado_d3) for s in sesiones) if g is not None]
-        out.append({
-            "id":        a.id,
-            "nombre":    a.nombre,
-            "apellido":  a.apellido,
-            "grado":     a.grado,
-            "seccion":   a.seccion,
-            "practicas": len(sesiones),
-            "promedio":  round(sum(scores) / len(scores)) if scores else None,
-            "ultima":    max((s.created_at for s in sesiones), default=None).isoformat() if sesiones else None,
-        })
-    return out
+    return [
+        {
+            "id":        f.id,
+            "nombre":    f.nombre,
+            "apellido":  f.apellido,
+            "grado":     f.grado,
+            "seccion":   f.seccion,
+            "practicas": f.practicas,
+            "promedio":  round(f.promedio) if f.promedio is not None else None,
+            "ultima":    f.ultima.isoformat() if f.ultima else None,
+        }
+        for f in filas
+    ]
 
 
 @router.get("/docente/alumno/{alumno_id}")
