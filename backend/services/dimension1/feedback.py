@@ -22,7 +22,27 @@ def _puntaje_pausas(long_pauses: int) -> int:
     return 0
 
 
+def _feedback_sin_voz() -> dict:
+    """Sin palabras transcritas no hay fluidez que medir: score 0 explícito.
+    (El router ya rechaza estas sesiones; esto es defensa en profundidad para
+    que la dimensión nunca regale los puntos por defecto de ppm=0.)"""
+    return {
+        "estrellas": 1,
+        "color": "red",
+        "mensaje_principal": "No detectamos tu voz.",
+        "detalle_velocidad": "No se escucharon palabras para medir la velocidad.",
+        "detalle_pausas": "No hubo habla suficiente para analizar.",
+        "consejos": ["Intenta de nuevo y habla un poco mas fuerte y claro."],
+        "score_d1": 0.0,
+        "_ppm_pts": 0,
+        "_pausas_pts": 0,
+    }
+
+
 def generate_feedback(ppm_result: dict, pauses_result: dict) -> dict:
+    if ppm_result.get("word_count", 0) == 0:
+        return _feedback_sin_voz()
+
     ppm = ppm_result.get("ppm", 0)
     long_pauses = pauses_result.get("long_pauses", 0)
     total_pauses = pauses_result.get("total_pauses", 0)

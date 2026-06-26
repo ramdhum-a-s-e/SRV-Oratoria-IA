@@ -383,6 +383,12 @@ export default function Practica() {
         if (textoId) fd.append('texto_id', textoId)
         try {
           const res = await api.post('/audio/analizar', fd)
+          // Grabación de silencio/ruido o muy corta: no hay puntaje, pedir reintento.
+          if (res.data.sesion_valida === false) {
+            setError(res.data.mensaje || 'No detectamos tu voz. Intenta de nuevo.')
+            hablar(res.data.mensaje || 'No detectamos tu voz. Intenta de nuevo.')
+            return
+          }
           setResultado(res.data)
           // Lee el consejo de la IA (Claude) si existe; si no, el mensaje del puntaje.
           hablar(res.data.consejo_ia || res.data.score_global.mensaje)

@@ -55,7 +55,26 @@ def score_to_stars(score: float) -> int:
     return 1
 
 
+def _feedback_d2_sin_voz() -> dict:
+    """Sin palabras no hay léxico ni coherencia que medir: score 0 explícito.
+    Evita que 0 muletillas + coherencia neutra regalen ~65 pts a una sesión vacía."""
+    return {
+        "score_d2": 0.0,
+        "estrellas": 1,
+        "detalle_muletillas": "No hubo palabras para analizar.",
+        "detalle_vocabulario": "No hubo palabras para medir tu vocabulario.",
+        "detalle_coherencia": "No hubo suficiente habla para medir la coherencia.",
+        "coherencia_nivel": "bajo",
+        "coherencia_metodo": "n/a",
+        "consejos": ["Intenta de nuevo y di al menos unas cuantas frases completas."],
+        "breakdown": {"pts_muletillas": 0, "pts_ttr": 0, "pts_coherencia": 0},
+    }
+
+
 def generate_feedback_d2(muletillas: dict, ttr: dict, coherencia: dict) -> dict:
+    if ttr.get("word_count", 0) == 0:
+        return _feedback_d2_sin_voz()
+
     count     = muletillas.get("muletillas_count", 0)
     tasa      = muletillas.get("muletillas_tasa", 0.0)
     ttr_score = ttr.get("ttr_score", 0.0)

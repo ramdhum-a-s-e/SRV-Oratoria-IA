@@ -16,6 +16,7 @@ from services.dimension1 import transcribe, calculate_ppm, detect_pauses, analyz
 from services.dimension2 import detect_muletillas, calc_ttr, calc_coherencia, generate_feedback_d2
 from services.dimension3 import calc_expresividad
 from services.scoring import calc_score_global
+from services.validation import es_sesion_valida, motivo_invalidez, MENSAJE_INVALIDA
 from services.ia_consejos import generar_consejo_ia
 from schemas.audio import TextoLecturaResponse
 
@@ -60,6 +61,21 @@ async def analizar_fluidez(
         for path in (raw_path, wav_path):
             if os.path.exists(path):
                 os.remove(path)
+
+    # ── Guard de contenido mínimo ───────────────────────────────────────────────
+    # Si la grabación es silencio/ruido o de muy pocos segundos, NO la puntuamos
+    # ni la guardamos: las dimensiones darían puntos por defecto e inflarían el
+    # score. Pedimos al alumno que repita.
+    if not es_sesion_valida(ppm_result["word_count"], ppm_result["speech_duration_s"]):
+        return {
+            "sesion_valida": False,
+            "mensaje": MENSAJE_INVALIDA,
+            "motivo": motivo_invalidez(
+                ppm_result["word_count"], ppm_result["speech_duration_s"]
+            ),
+            "transcripcion": transcript,
+            "ppm": ppm_result,
+        }
 
     # ── D1 ────────────────────────────────────────────────────────────────────
     feedback_d1 = generate_feedback(ppm_result, pauses_result)
@@ -155,6 +171,7 @@ async def analizar_fluidez(
 
     # ── Respuesta ─────────────────────────────────────────────────────────────
     return {
+        "sesion_valida": True,
         "sesion_id":     sesion.id,
         "transcripcion": transcript,
         "ppm":    ppm_result,
