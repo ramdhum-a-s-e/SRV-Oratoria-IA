@@ -14,7 +14,10 @@ import os
 _BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 _BETO_LOCAL  = os.path.join(_BACKEND_DIR, "models_cache", "beto")
 _BETO_HF_ID  = "dccuchile/bert-base-spanish-wwm-cased"
-_SPACY_MODEL = "es_core_news_lg"
+# Se intentan en orden de preferencia (mayor calidad primero). Se usa el primero
+# que esté instalado, así el sistema NUNCA cae silenciosamente al fallback de
+# regex/split solo por un nombre de modelo que no coincide con lo instalado.
+_SPACY_MODELS = ["es_core_news_lg", "es_core_news_md", "es_core_news_sm"]
 
 _nlp = None            # spaCy pipeline
 _beto_tok = None       # BETO tokenizer
@@ -28,15 +31,18 @@ def get_spacy():
     global _nlp, _spacy_tried
     if _nlp is None and not _spacy_tried:
         _spacy_tried = True
-        try:
-            import spacy
-            print(f"[SRV] Cargando spaCy '{_SPACY_MODEL}'...")
-            # Desactivamos componentes que no usamos (ner, parser) para acelerar
-            _nlp = spacy.load(_SPACY_MODEL, disable=["ner", "parser"])
-            print("[SRV] spaCy cargado OK")
-        except Exception as e:
-            print(f"[SRV] No se pudo cargar spaCy ({e}). Fallback a regex/split.")
-            _nlp = None
+        import spacy
+        for modelo in _SPACY_MODELS:
+            try:
+                print(f"[SRV] Cargando spaCy '{modelo}'...")
+                # Desactivamos componentes que no usamos (ner, parser) para acelerar
+                _nlp = spacy.load(modelo, disable=["ner", "parser"])
+                print(f"[SRV] spaCy '{modelo}' cargado OK")
+                break
+            except Exception as e:
+                print(f"[SRV] No se pudo cargar spaCy '{modelo}' ({e}).")
+        if _nlp is None:
+            print("[SRV] Ningún modelo spaCy disponible. Fallback a regex/split.")
     return _nlp
 
 

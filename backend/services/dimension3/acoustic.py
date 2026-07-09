@@ -39,16 +39,17 @@ def calc_expresividad(prosodia: dict) -> dict:
         hnr_pts = 0.0
 
     # ── 3. Volumen adecuado (0-30 pts) ────────────────────────────────────────
-    # 55-75 dB SPL = voz proyectada de niño en aula.
-    # < 45 dB = muy susurrado.  > 85 dB = gritando.
-    if 55 <= intensity <= 75:
+    # 55-75 dB = voz proyectada de niño en aula (meseta = 30 pts).
+    # Rampa continua hacia los extremos (35 dB → 0, 95 dB → 0) en vez de escalones,
+    # para que una diferencia mínima de volumen no salte 15 pts de golpe.
+    if intensity <= 0:
+        vol_pts = 15.0                     # sin datos → neutro
+    elif 55 <= intensity <= 75:
         vol_pts = 30.0
-    elif 45 <= intensity < 55 or 75 < intensity <= 85:
-        vol_pts = 15.0
-    elif intensity > 0:
-        vol_pts = 5.0
+    elif intensity < 55:
+        vol_pts = round(max(0.0, (intensity - 35) / (55 - 35) * 30.0), 1)  # 35→0, 55→30
     else:
-        vol_pts = 10.0  # sin datos → neutro
+        vol_pts = round(max(0.0, (95 - intensity) / (95 - 75) * 30.0), 1)  # 75→30, 95→0
 
     score_d3 = round(variacion_pts + hnr_pts + vol_pts, 1)
 

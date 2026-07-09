@@ -22,6 +22,38 @@ def _puntaje_pausas(long_pauses: int) -> int:
     return 0
 
 
+# ── Scoring CONTINUO (rampas lineales en vez de escalones) ────────────────────
+# Motivo: con puntajes en escalón, una diferencia mínima (p. ej. 79.9 vs 80.1 ppm,
+# o una palabra más reconocida por el ASR) cruzaba un umbral y saltaba 20 puntos.
+# Con rampas, pequeñas variaciones producen pequeñas variaciones de nota: más
+# estable y más justo. Pesos: velocidad 60 % / pausas 40 % (equivale al antiguo
+# 3 pts / 2 pts sobre 5).
+W_VELOCIDAD, W_PAUSAS = 0.60, 0.40
+
+
+def _score_ppm_continuo(ppm: float) -> float:
+    """0-100 suave: meseta 100 en 80-120 ppm; baja lineal a 0 en 40 y 160 ppm."""
+    if PPM_MIN <= ppm <= PPM_MAX:
+        return 100.0
+    if ppm < PPM_MIN:
+        return max(0.0, (ppm - 40) / (PPM_MIN - 40) * 100)   # 40→0, 80→100
+    return max(0.0, (160 - ppm) / (160 - PPM_MAX) * 100)     # 120→100, 160→0
+
+
+def _score_pausas_continuo(long_pauses: int) -> float:
+    """0-100: 0 bloqueos = 100; cada bloqueo resta 25 (0→100,1→75,2→50,...)."""
+    return max(0.0, 100.0 - long_pauses * 25.0)
+
+
+def _estrellas_desde_score(score: float) -> int:
+    """Estrellas 1-5 a partir de un score 0-100 (mismos cortes que el global)."""
+    if score >= 85: return 5
+    if score >= 70: return 4
+    if score >= 50: return 3
+    if score >= 30: return 2
+    return 1
+
+
 def _feedback_sin_voz() -> dict:
     """Sin palabras transcritas no hay fluidez que medir: score 0 explícito.
     (El router ya rechaza estas sesiones; esto es defensa en profundidad para
@@ -47,10 +79,13 @@ def generate_feedback(ppm_result: dict, pauses_result: dict) -> dict:
     long_pauses = pauses_result.get("long_pauses", 0)
     total_pauses = pauses_result.get("total_pauses", 0)
 
+    # Score continuo (nuevo). Los puntos discretos se conservan solo como
+    # metadato interno para compatibilidad; ya no determinan la nota.
     ppm_pts    = _puntaje_ppm(ppm)
     pausas_pts = _puntaje_pausas(long_pauses)
-    pts        = ppm_pts + pausas_pts
-    estrellas  = max(1, min(5, pts))
+    score_d1   = round(W_VELOCIDAD * _score_ppm_continuo(ppm)
+                       + W_PAUSAS * _score_pausas_continuo(long_pauses), 1)
+    estrellas  = _estrellas_desde_score(score_d1)
 
     # Mensaje principal segun velocidad
     if ppm < PPM_MUY_LENTO:
@@ -92,8 +127,6 @@ def generate_feedback(ppm_result: dict, pauses_result: dict) -> dict:
         color = "red"
 
     consejos = [c for c in [consejo_velocidad, consejo_pausas] if c]
-
-    score_d1 = round((pts / 5.0) * 100, 1)
 
     return {
         "estrellas": estrellas,
