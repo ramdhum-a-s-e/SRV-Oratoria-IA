@@ -26,8 +26,11 @@ ctranslate2==4.7.1          # Backend de faster-whisper (GPU/CPU)
 spacy==3.8.7                # NLP español: lematización, muletillas, TTR
 transformers==4.52.4        # BETO para coherencia semántica
 torch==2.6.0+cpu            # backend de transformers (CPU-only, sin CUDA)
-# Modelo spaCy (instalar aparte):
-#   python -m spacy download es_core_news_sm
+# Modelo spaCy (instalar aparte). El código (services/nlp_models.py) intenta
+# lg → md → sm y usa el primero instalado. Instala AL MENOS uno; se recomienda
+# lg por mejor lematización (o sm si el entorno tiene poca memoria, p. ej. Render):
+#   python -m spacy download es_core_news_lg   # recomendado
+#   python -m spacy download es_core_news_sm   # alternativa ligera
 # Modelo BETO (se descarga solo de HuggingFace, o copiar models_cache/beto):
 #   dccuchile/bert-base-spanish-wwm-cased
 

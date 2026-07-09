@@ -67,11 +67,14 @@ def auth_headers(client):
 @pytest.fixture
 def mock_pipeline(monkeypatch):
     """Devuelve una función para mockear el pipeline de audio con una transcripción dada."""
-    def _apply(transcript="hola yo soy ana y me gusta leer cuentos"):
+    def _apply(transcript="hola yo soy ana y me gusta mucho leer cuentos en el colegio"):
         import routers.audio as r
+        # Timing por palabra: 0.5s de habla + 0.1s de gap = 0.6s/palabra. Con
+        # >=10 palabras esto supera el guard de sesión válida (>=10 palabras y
+        # >=5s de habla, ver services/validation.py).
         palabras, t = [], 0.0
         for w in transcript.split():
-            palabras.append(WordToken(w, t, t + 0.3)); t += 0.4
+            palabras.append(WordToken(w, t, t + 0.5)); t += 0.6
         monkeypatch.setattr(r, "to_wav", lambda a, b: None)
         monkeypatch.setattr(r, "get_model_final", lambda: object())
         monkeypatch.setattr(r, "transcribe", lambda wav, model: (palabras, transcript))

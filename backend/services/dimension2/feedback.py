@@ -26,25 +26,30 @@ COH_UMBRALES = {
 }
 
 
-def _pts_muletillas(count: int) -> int:
-    if count <= MUL_EXCELENTE:  return 40
-    if count <= MUL_BUENO:      return 25
-    if count <= MUL_REGULAR:    return 10
-    return 0
+# ── Scoring CONTINUO (rampas lineales en vez de escalones) ────────────────────
+# Igual que en D1: se sustituyen los saltos discretos por rampas para que una
+# palabra/muletilla de más o de menos no cambie la nota en bloque. Las rampas se
+# calibraron para reproducir los antiguos umbrales en sus puntos centrales.
+def _pts_muletillas(count: int) -> float:
+    """40 pts con 0-1 muletillas; -5 por cada muletilla extra (mín. 0)."""
+    return round(max(0.0, min(40.0, 40.0 - max(0, count - MUL_EXCELENTE) * 5.0)), 1)
 
 
-def _pts_ttr(ttr: float) -> int:
-    if ttr > TTR_BUENO:    return 35
-    if ttr > TTR_REGULAR:  return 20
-    return 5
+def _pts_ttr(ttr: float) -> float:
+    """Rampa que pasa por (0.30→20, 0.50→35); recorte a [5, 35]."""
+    pts = 20.0 + (ttr - TTR_REGULAR) * 75.0
+    return round(max(5.0, min(35.0, pts)), 1)
 
 
-def _pts_coherencia(score: float, metodo: str = "jaccard") -> int:
+def _pts_coherencia(score: float, metodo: str = "jaccard") -> float:
+    if metodo == "n/a":                       # texto corto → puntaje neutral
+        return 20.0
     bueno, regular = COH_UMBRALES.get(metodo, COH_UMBRALES["jaccard"])
-    if metodo == "n/a":          return 20   # texto corto → puntaje neutral
-    if score > bueno:            return 25
-    if score > regular:          return 15
-    return 5
+    if bueno <= regular:                      # guarda contra división por cero
+        return 15.0
+    # 15 pts en el umbral 'regular', 25 pts en 'bueno'; interpolación lineal.
+    pts = 15.0 + (score - regular) / (bueno - regular) * 10.0
+    return round(max(5.0, min(25.0, pts)), 1)
 
 
 def score_to_stars(score: float) -> int:
@@ -84,7 +89,7 @@ def generate_feedback_d2(muletillas: dict, ttr: dict, coherencia: dict) -> dict:
     pts_mul = _pts_muletillas(count)
     pts_ttr = _pts_ttr(ttr_score)
     pts_coh = _pts_coherencia(coh_score, coh_metodo)
-    score_d2 = float(pts_mul + pts_ttr + pts_coh)  # 0-100
+    score_d2 = round(pts_mul + pts_ttr + pts_coh, 1)  # 0-100
     estrellas = score_to_stars(score_d2)
 
     # Mensajes de muletillas
@@ -113,11 +118,11 @@ def generate_feedback_d2(muletillas: dict, ttr: dict, coherencia: dict) -> dict:
 
     # Mensajes de coherencia (según los puntos obtenidos, no el score crudo,
     # porque el rango depende del método BETO vs Jaccard)
-    if pts_coh >= 25:
+    if pts_coh >= 22:
         nivel_coh = "bueno"
         msg_coh = "Tus ideas estan bien conectadas. Se entiende lo que dices!"
         consejo_coh = None
-    elif pts_coh >= 15:
+    elif pts_coh >= 12:
         nivel_coh = "regular"
         msg_coh = "Tus ideas tienen sentido en general."
         consejo_coh = "Intenta usar palabras como 'porque', 'entonces' o 'despues' para conectar ideas."

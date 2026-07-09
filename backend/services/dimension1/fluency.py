@@ -10,7 +10,21 @@ class WordToken:
 
 
 def transcribe(audio_path: str, model: WhisperModel) -> tuple[list[WordToken], str]:
-    segments, _ = model.transcribe(audio_path, language="es", word_timestamps=True)
+    # Decodificación FIJA para que el mismo audio dé SIEMPRE el mismo resultado:
+    #   · beam_size=1 + temperature=0.0 → greedy determinista (sin muestreo aleatorio)
+    #   · condition_on_previous_text=False → evita arrastre de contexto entre segmentos
+    #   · vad_filter=True → recorta silencio/ruido antes de transcribir, lo que reduce
+    #     palabras "alucinadas" y timestamps basura que descuadraban PPM y pausas.
+    segments, _ = model.transcribe(
+        audio_path,
+        language="es",
+        word_timestamps=True,
+        beam_size=1,
+        temperature=0.0,
+        condition_on_previous_text=False,
+        vad_filter=True,
+        vad_parameters={"min_silence_duration_ms": 500},
+    )
     words = []
     for segment in segments:
         if segment.words:

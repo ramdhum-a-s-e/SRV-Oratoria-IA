@@ -9,7 +9,7 @@ def test_analizar_requiere_auth(client):
 
 
 def test_analizar_modo_libre(client, auth_headers, mock_pipeline):
-    mock_pipeline("hola yo soy ana y me gusta leer cuentos")
+    mock_pipeline("hola yo soy ana y me gusta mucho leer cuentos en el colegio")
     r = client.post("/audio/analizar", data={"modo": "libre"}, files=FILES, headers=auth_headers)
     assert r.status_code == 200
     body = r.json()
@@ -21,13 +21,14 @@ def test_analizar_modo_libre(client, auth_headers, mock_pipeline):
 
 def test_analizar_modo_lectura_fidelidad(client, auth_headers, db_session, mock_pipeline):
     from models.session import TextoLectura
-    texto = TextoLectura(titulo="Prueba", contenido="el gato corre en el parque")
+    lectura_texto = "el gato corre en el parque muy rapido durante toda la tarde"
+    texto = TextoLectura(titulo="Prueba", contenido=lectura_texto)
     db_session.add(texto)
     db_session.commit()
     tid = texto.id
 
     # el alumno "lee" exactamente el texto → fidelidad 100%
-    mock_pipeline("el gato corre en el parque")
+    mock_pipeline(lectura_texto)
     r = client.post(
         "/audio/analizar",
         data={"modo": "lectura", "texto_id": str(tid)},
