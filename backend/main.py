@@ -27,6 +27,12 @@ def ensure_schema():
             with engine.begin() as conn:
                 conn.execute(text("ALTER TABLE usuarios ADD COLUMN rol VARCHAR(20) DEFAULT 'alumno'"))
             logger.info("Columna 'rol' añadida a la tabla usuarios")
+
+        cols_d1 = [c["name"] for c in insp.get_columns("resultados_d1")]
+        if "audio_path" not in cols_d1:
+            with engine.begin() as conn:
+                conn.execute(text("ALTER TABLE resultados_d1 ADD COLUMN audio_path VARCHAR(300)"))
+            logger.info("Columna 'audio_path' añadida a la tabla resultados_d1")
     except Exception as e:
         logger.warning(f"ensure_schema: {e}")
 
