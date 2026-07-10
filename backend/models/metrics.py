@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, Float, Text, ForeignKey, JSON
+from sqlalchemy import Column, Integer, Float, Text, String, ForeignKey, JSON
 from sqlalchemy.orm import relationship
 from database import Base
 
@@ -24,6 +24,7 @@ class ResultadoD1(Base):
     estrellas         = Column(Integer)
     score_d1          = Column(Float, nullable=True)
     feedback_json     = Column(JSON)
+    audio_path        = Column(String(300), nullable=True)  # ruta del audio en Supabase Storage (bucket/objeto); NULL si la persistencia está desactivada
 
     sesion = relationship("Sesion", back_populates="resultado_d1")
 

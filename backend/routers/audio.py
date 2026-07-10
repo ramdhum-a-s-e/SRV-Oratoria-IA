@@ -144,6 +144,7 @@ async def analizar_fluidez(
         estrellas         = feedback_d1["estrellas"],
         score_d1          = feedback_d1.get("score_d1"),
         feedback_json     = fb_d1_json,
+        audio_path        = audio_path,
     )
     resultado_d2 = ResultadoD2(
         sesion_id        = sesion.id,
